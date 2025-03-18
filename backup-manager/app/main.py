@@ -12,7 +12,7 @@ app = FastAPI()
 @dataclass
 class Backup:
     label: str
-    timestamp: str
+    timestamp: int
     type: str
     size: str
 
