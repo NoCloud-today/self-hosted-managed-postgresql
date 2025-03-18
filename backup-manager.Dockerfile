@@ -52,6 +52,10 @@ COPY backup-manager/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
 COPY backup-manager .
 
+COPY backup-manager/scripts /app/scripts
+RUN chmod -R 755 /app/scripts && \
+    chown -R pgbackrest:pgbackrest /app/scripts
+
 COPY backup-manager/crontab /etc/cron.d/backup-cron
 RUN chmod 0644 /etc/cron.d/backup-cron && \
     crontab /etc/cron.d/backup-cron
