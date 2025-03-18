@@ -17,9 +17,9 @@ class Backup:
     size: str
 
 
-def run_command(command: List[str]) -> str:
+def run_command(command: List[str], cwd: str = None) -> str:
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        result = subprocess.run(command, capture_output=True, text=True, check=True, cwd=cwd)
         return result.stdout
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Command failed: {e.stderr}")
@@ -28,7 +28,7 @@ def run_command(command: List[str]) -> str:
 @app.post("/backup")
 async def create_backup():
     try:
-        result = run_command(["pgbackrest" ,"--log-level-console=info","backup" ,"--type=incr", "--stanza=main"])
+        result = run_command(["pgbackrest", "--log-level-console=info", "backup", "--type=incr", "--stanza=main"])
         return {"message": "Backup created successfully", "details": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -60,9 +60,9 @@ async def restore_backup(timestamp: int):
         tz_offset = timezone(timedelta(hours=4))
         dt = datetime.fromtimestamp(timestamp, tz_offset)
         result = run_command([
-            "./scripts/restore.sh",
+            "/app/scripts/restore.sh",
             dt.isoformat()
-        ])
+        ], cwd="/app/scripts")
         return {"message": "Restore completed successfully", "details": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
