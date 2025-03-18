@@ -1,0 +1,46 @@
+services:
+  postgres:
+    container_name: postgres
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+      - "2222:22"
+    volumes:
+      - ./postgres/backups:/var/lib/pgbackrest
+    restart: always
+    healthcheck:
+      test: [ "CMD","su","postgres","-c","\"pg_isready\"" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 0s
+    networks:
+      - mynetwork
+
+  backup-manager:
+    container_name: backup-manager
+    build:
+      context: .
+      dockerfile: backup-manager.Dockerfile
+    environment:
+      - POSTGRES_HOST=postgres
+    ports:
+      - "8000:8000"
+      - "2223:22"
+    volumes:
+      - ./backups:/var/lib/pgbackrest
+      - ./backup-manager/scripts:/app/scripts
+    networks:
+      - mynetwork
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  mynetwork:
+    driver: bridge
