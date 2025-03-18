@@ -4,8 +4,9 @@ services:
     build:
       context: .
       dockerfile: postgres.Dockerfile
+      args:
+        - POSTGRES_PASSWORD=postgres
     environment:
-      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5433:5432"
@@ -34,7 +35,6 @@ services:
       - "2223:22"
     volumes:
       - ./backups:/var/lib/pgbackrest
-      - ./backup-manager/scripts:/app/scripts
     networks:
       - mynetwork
     depends_on:

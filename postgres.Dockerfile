@@ -1,5 +1,8 @@
 FROM ubuntu:latest
 
+ARG POSTGRES_PASSWORD
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
 RUN apt-get update && apt-get install -y \
     pgbackrest=2.50-1build2 \
     openssh-client \
