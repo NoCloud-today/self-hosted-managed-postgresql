@@ -25,8 +25,8 @@ def run_command(command: List[str], cwd: str = None) -> str:
         raise HTTPException(status_code=500, detail=f"Command failed: {e.stderr}")
 
 
-@app.post("/backup")
-async def create_backup():
+@app.post("/backup/incr")
+async def create_incremental_backup():
     try:
         result = run_command(["pgbackrest", "--log-level-console=info", "backup", "--type=incr", "--stanza=main"])
         return {"message": "Backup created successfully", "details": result}
@@ -54,14 +54,15 @@ async def list_backups():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/restore")
+@app.post("/restore/time")
 async def restore_backup(timestamp: int):
     try:
-        tz_offset = timezone(timedelta(hours=4))
+        tz_offset = timezone(timedelta(hours=0))
         dt = datetime.fromtimestamp(timestamp, tz_offset)
+        iso_time = dt.replace(microsecond=0).isoformat()
         result = run_command([
-            "/app/scripts/restore.sh",
-            dt.isoformat()
+            "/app/scripts/restore_time.sh",
+            iso_time
         ], cwd="/app/scripts")
         return {"message": "Restore completed successfully", "details": result}
     except Exception as e:
