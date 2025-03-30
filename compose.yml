@@ -12,7 +12,7 @@ services:
       - "5433:5432"
       - "2222:22"
     volumes:
-      - ./postgres/backups:/var/lib/pgbackrest
+      - ./postgres/data:/var/lib/postgresql/16/main
     restart: always
     healthcheck:
       test: [ "CMD","su","postgres","-c","\"pg_isready\"" ]
@@ -40,7 +40,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
 networks:
   mynetwork:
     driver: bridge
