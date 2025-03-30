@@ -33,6 +33,22 @@ async def create_incremental_backup():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/backup/full")
+async def create_full_backup():
+    try:
+        result = run_command(["pgbackrest", "--log-level-console=info", "backup", "--type=full", "--stanza=main"])
+        return {"message": "Backup created successfully", "details": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/backup/diff")
+async def create_diff_backup():
+    try:
+        result = run_command(["pgbackrest", "--log-level-console=info", "backup", "--type=diff", "--stanza=main"])
+        return {"message": "Backup created successfully", "details": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/backups", response_model=List[Backup])
 async def list_backups():
