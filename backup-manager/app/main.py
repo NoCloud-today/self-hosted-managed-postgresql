@@ -67,3 +67,14 @@ async def restore_backup(timestamp: int):
         return {"message": "Restore completed successfully", "details": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/restore/immediate")
+async def restore_immediate(database_name: str = None):
+    try:
+        if database_name is None:
+            result = run_command(["/app/scripts/restore_immediate.sh"], cwd="/app/scripts")
+        else:
+            result = run_command(["/app/scripts/restore_immediate.sh", database_name], cwd="/app/scripts")
+        return {"message": "Restore completed successfully", "details": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
