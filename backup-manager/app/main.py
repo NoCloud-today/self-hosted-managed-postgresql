@@ -16,6 +16,10 @@ class Backup:
     type: str
     size: str
 
+@dataclass
+class SQLRequest:
+    query: str
+    database_name: str = "postgres"
 
 def run_command(command: List[str], cwd: str = None) -> str:
     try:
@@ -94,3 +98,19 @@ async def restore_immediate(database_name: str = None):
         return {"message": "Restore completed successfully", "details": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/database/run")
+async def run_sql(request: SQLRequest):
+    try:
+        result = run_command([
+            "/app/scripts/run_sql.sh",
+            request.database_name,
+            request.query
+        ], cwd="/app/scripts")
+        return {"message": "SQL executed successfully", "result": get_formatted_result(result)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def get_formatted_result(unformatted_output: str) -> str:
+    start_index = str.find(unformatted_output, "OUTPUT:")
+    return unformatted_output[start_index + len("OUTPUT:"):].strip()
