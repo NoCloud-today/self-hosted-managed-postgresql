@@ -45,10 +45,8 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5433:5432"
-      - "2222:22"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/postgres_data:/var/lib/postgresql/16/main
-#      - ./certs:/etc/minio/certs
     restart: always
     healthcheck:
       test: [ "CMD","su","postgres","-c","\"pg_isready\"" ]
@@ -72,7 +70,6 @@ services:
       - POSTGRES_HOST=postgres
     ports:
       - "8000:8000"
-      - "2223:22"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/pgbackrest:/var/lib/pgbackrest
     networks:
