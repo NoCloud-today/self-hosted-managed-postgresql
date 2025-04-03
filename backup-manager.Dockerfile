@@ -3,8 +3,6 @@ FROM ubuntu:latest
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
-    perl \
-    pgbackrest=2.50-1build2 \
     python3 \
     python3-pip \
     cron \
@@ -19,33 +17,31 @@ RUN apt-get update && \
     apt-get install -y openssh-server sudo && \
     mkdir /var/run/sshd && chmod 0755 /var/run/sshd
 
-COPY backup-manager/config/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
 
-RUN adduser pgbackrest
-RUN mkdir -p -m 700 /home/pgbackrest/.ssh
-RUN chown pgbackrest:pgbackrest /home/pgbackrest/.ssh
-RUN chown pgbackrest:pgbackrest /var/log/pgbackrest
-USER pgbackrest
-COPY --chown=pgbackrest:pgbackrest ssh_keys/id_rsa_backup_manager /home/pgbackrest/.ssh/id_rsa
-COPY --chown=pgbackrest:pgbackrest ssh_keys/id_rsa_backup_manager.pub /home/pgbackrest/.ssh/id_rsa.pub
-RUN chmod 600 /home/pgbackrest/.ssh/id_rsa && \
-    chmod 644 /home/pgbackrest/.ssh/id_rsa.pub
+RUN adduser backup-manager
+RUN mkdir -p -m 700 /home/backup-manager/.ssh
+RUN chown backup-manager:backup-manager /home/backup-manager/.ssh
+USER backup-manager
+COPY --chown=backup-manager:backup-manager ssh_keys/id_rsa_backup_manager /home/backup-manager/.ssh/id_rsa
+COPY --chown=backup-manager:backup-manager ssh_keys/id_rsa_backup_manager.pub /home/backup-manager/.ssh/id_rsa.pub
+RUN chmod 600 /home/backup-manager/.ssh/id_rsa && \
+    chmod 644 /home/backup-manager/.ssh/id_rsa.pub
 
-COPY --chown=pgbackrest:pgbackrest ssh_keys/id_rsa_postgres.pub /home/pgbackrest/.ssh/authorized_keys
+COPY --chown=backup-manager:backup-manager ssh_keys/id_rsa_postgres.pub /home/backup-manager/.ssh/authorized_keys
 
 RUN eval $(ssh-agent) && \
-    ssh-add /home/pgbackrest/.ssh/id_rsa
+    ssh-add /home/backup-manager/.ssh/id_rsa
 USER root
-RUN chown pgbackrest:pgbackrest /home/pgbackrest/.ssh
-RUN chmod 600 /home/pgbackrest/.ssh/authorized_keys
+RUN chown backup-manager:backup-manager /home/backup-manager/.ssh
+RUN chmod 600 /home/backup-manager/.ssh/authorized_keys
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
 
-RUN mkdir -p /home/pgbackrest/.ssh && \
-    echo "Host postgres\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > /home/pgbackrest/.ssh/config && \
-    chown -R pgbackrest:pgbackrest /home/pgbackrest/.ssh && \
-    chmod 600 /home/pgbackrest/.ssh/config
+RUN mkdir -p /home/backup-manager/.ssh && \
+    echo "Host postgres\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null" > /home/backup-manager/.ssh/config && \
+    chown -R backup-manager:backup-manager /home/backup-manager/.ssh && \
+    chmod 600 /home/backup-manager/.ssh/config
 
 EXPOSE 22
 COPY backup-manager/requirements.txt .
@@ -54,7 +50,7 @@ COPY backup-manager .
 
 COPY backup-manager/scripts /app/scripts
 RUN chmod -R 755 /app/scripts && \
-    chown -R pgbackrest:pgbackrest /app/scripts
+    chown -R backup-manager:backup-manager /app/scripts
 
 COPY backup-manager/crontab /etc/cron.d/backup-cron
 RUN chmod 0644 /etc/cron.d/backup-cron && \
