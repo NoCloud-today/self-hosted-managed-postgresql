@@ -17,7 +17,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
 
     - name: Install necessary packages
-      run: apt update && apt install openssh-client libssl-dev
+      run: sudo apt update && sudo apt install -y openssh-client libssl-dev
 
     - name: Create ssh_keys directory
       run: mkdir -p ssh_keys
