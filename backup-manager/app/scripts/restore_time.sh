@@ -17,3 +17,4 @@ ssh -t postgres@postgres "pgbackrest --stanza=main --log-level-console=info --ty
 sleep 2
 
 ./start.sh
+./wait.sh

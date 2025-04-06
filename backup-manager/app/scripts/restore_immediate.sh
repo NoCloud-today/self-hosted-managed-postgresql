@@ -14,3 +14,4 @@ fi
 
 sleep 2
 ./start.sh
+./wait.sh
