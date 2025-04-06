@@ -19,11 +19,28 @@ jobs:
     - name: Install necessary packages
       run: apt update && apt install openssh-client libssl-dev
 
-    - name: Create ssh keys
-      run: ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres && ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager
+    - name: Create ssh_keys directory
+      run: mkdir -p ssh_keys
 
-    - name: Create certificates
-      run: mkdir -p certs && openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048 && openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
+    - name: Generate SSH keys for postgres
+      run: |
+        ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres -N ""
+        chmod 600 ssh_keys/id_rsa_postgres
+
+    - name: Generate SSH keys for backup manager
+      run: |
+        ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager -N ""
+        chmod 600 ssh_keys/id_rsa_backup_manager
+
+    - name: Create certificates directory
+      run: mkdir -p certs
+
+    - name: Generate SSL certificates
+      run: |
+        openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048
+        openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
+        chmod 600 certs/private.key
+        chmod 644 certs/public.crt
 
     - name: Make test script executable
       run: chmod +x run_tests.sh
