@@ -6,6 +6,7 @@ mkdir -p /var/log/postgresql
 chown postgres:postgres /var/log/postgresql
 
 if [ ! -s "/var/lib/postgresql/16/main/PG_VERSION" ]; then
+    chown postgres:postgres /var/lib/postgresql/16/main
     su postgres -c "/usr/lib/postgresql/16/bin/initdb -D /var/lib/postgresql/16/main"
 fi
 
