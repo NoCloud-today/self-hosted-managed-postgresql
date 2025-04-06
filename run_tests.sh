@@ -21,7 +21,7 @@ DOCKER_VOLUME_DIRECTORY=$BEFORE
 docker compose -f compose.yml -f compose.test.yml up --abort-on-container-exit --force-recreate --build
 TEST_EXIT_CODE=$?
 
-rm -rf $TEST_DIRECTORY
+sudo rm -rf $TEST_DIRECTORY
 docker-compose -f compose.yml -f compose.test.yml down -v
 echo "Cleaning up test environment..."
 exit $TEST_EXIT_CODE
