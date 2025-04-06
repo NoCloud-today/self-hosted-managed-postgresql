@@ -64,4 +64,10 @@ RUN chmod +x /entrypoint.sh
 RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
     mv mc /usr/bin/mc && \
     chmod +x /usr/bin/mc
+
+RUN mkdir -p /var/lib/postgresql/16/main && \
+chown postgres:postgres /var/lib/postgresql/16/main && \
+chmod 700 /var/lib/postgresql/16/main
+
+
 ENTRYPOINT ["/entrypoint.sh"]
