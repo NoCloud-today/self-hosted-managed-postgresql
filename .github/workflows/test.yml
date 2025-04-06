@@ -15,9 +15,18 @@ jobs:
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
+    - name: Install necessary packages
+      run: apt update && apt install openssh-client libssl-dev
+
+    - name: Create ssh keys
+      run: ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres && ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager
+
+    - name: Create certificates
+      run: mkdir -p certs && openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048 && openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
+
     - name: Make test script executable
       run: chmod +x run_tests.sh
-    
+
     - name: Run tests
       run: ./run_tests.sh 
