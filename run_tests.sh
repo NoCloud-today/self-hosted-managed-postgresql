@@ -5,7 +5,7 @@ echo "Starting test environment..."
 TEST_DIRECTORY=./test-volume
 echo "Running unit tests"
 docker build -f "backup-manager.unit-test.Dockerfile" -t backup-manager-unit-test .
-docker run --name backup-manager-unit-test-container backup-manager-unit-test || true
+docker run --name backup-manager-unit-test-container backup-manager-unit-test
 TEST_EXIT_CODE=$?
 docker rm backup-manager-unit-test-container
 echo "Stop running unit tests"
@@ -18,9 +18,10 @@ export DOCKER_VOLUME_DIRECTORY=$TEST_DIRECTORY
 BEFORE=$DOCKER_VOLUME_DIRECTORY
 DOCKER_VOLUME_DIRECTORY=$BEFORE
 
-docker-compose -f compose.yml -f compose.test.yml up --abort-on-container-exit --force-recreate --build || true
+docker compose -f compose.yml -f compose.test.yml up --abort-on-container-exit --force-recreate --build
 TEST_EXIT_CODE=$?
 
 rm -rf $TEST_DIRECTORY
+docker-compose -f compose.yml -f compose.test.yml down -v
 echo "Cleaning up test environment..."
-exit "$TEST_EXIT_CODE"
+exit $TEST_EXIT_CODE
