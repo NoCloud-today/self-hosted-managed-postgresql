@@ -8,6 +8,10 @@ from app.src.services.backup_service import BackupService
 router = APIRouter()
 backup_service = BackupService()
 
+@router.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
 @router.post("/backup/incr")
 async def create_incremental_backup():
     try:

@@ -62,7 +62,7 @@ class BackupService:
 
     def run_sql(self, query:str, database_name:str):
         result = self._run_command([
-                "/app/scripts/run_sql.sh",
+                "./run_sql.sh",
                 database_name,
                 query
             ], cwd="/app/scripts")
