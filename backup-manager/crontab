@@ -1,1 +1,0 @@
-0 4 * * * /app/scripts/backup_time.sh >> /var/log/cron.log 2>&1
