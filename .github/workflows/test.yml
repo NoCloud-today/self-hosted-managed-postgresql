@@ -109,5 +109,20 @@ jobs:
           chmod 600 certs/private.key
           chmod 644 certs/public.crt
 
-      - name: Run tests
-        run: bash test-scripts/run_emergency_stop_test.sh
+      - name: Run full backup test with immediate restore
+        run: bash test-scripts/run_emergency_stop_test.sh full
+
+      - name: Run diff backup test with immediate restore
+        run: bash test-scripts/run_emergency_stop_test.sh diff
+
+      - name: Run incr backup test with immediate restore
+        run: bash test-scripts/run_emergency_stop_test.sh incr
+
+      - name: Run pitr-incr backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-incr
+
+      - name: Run pitr-diff backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-diff
+
+      - name: Run pitr-full backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-full

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 wait_for_health() {
     local max_attempts=30
     local attempt=0
@@ -76,7 +74,6 @@ cleanup(){
   docker compose down -v
   sudo rm -rf "./test-volume"
 
-
   echo "Test completed successfully"
 }
 
@@ -84,7 +81,6 @@ full_backup_test(){
   prepare_test_database
   echo "Performing full backup..."
   curl -X POST http://0.0.0.0:8000/backup/full
-
 
   wait_for_postgres_container
   create_immediate_restore
@@ -106,7 +102,6 @@ incr_backup_test(){
   prepare_test_database
   echo "Performing incr backup..."
   curl -X POST http://0.0.0.0:8000/backup/incr
-
 
   wait_for_postgres_container
   create_immediate_restore
@@ -147,12 +142,52 @@ pitr_full_backup_test(){
   verify_restore
   cleanup
 }
+
+if [ $# -eq 0 ]; then
+    echo "Error: Please provide a test type"
+    echo "Available test types:"
+    echo "  full      - Full backup test"
+    echo "  diff      - Differential backup test"
+    echo "  incr      - Incremental backup test"
+    echo "  pitr-incr - Point-in-time recovery with incremental backup"
+    echo "  pitr-diff - Point-in-time recovery with differential backup"
+    echo "  pitr-full - Point-in-time recovery with full backup"
+    exit 1
+fi
+
 BEFORE=$DOCKER_VOLUME_DIRECTORY
 export DOCKER_VOLUME_DIRECTORY="./test-volume"
-full_backup_test
-diff_backup_test
-incr_backup_test
-pitr_incr_backup_test
-pitr_diff_backup_test
-pitr_full_backup_test
+
+case "$1" in
+    "full")
+        full_backup_test
+        ;;
+    "diff")
+        diff_backup_test
+        ;;
+    "incr")
+        incr_backup_test
+        ;;
+    "pitr-incr")
+        pitr_incr_backup_test
+        ;;
+    "pitr-diff")
+        pitr_diff_backup_test
+        ;;
+    "pitr-full")
+        pitr_full_backup_test
+        ;;
+    *)
+        echo "Error: Unknown test type '$1'"
+        echo "Available test types:"
+        echo "  full      - Full backup test"
+        echo "  diff      - Differential backup test"
+        echo "  incr      - Incremental backup test"
+        echo "  pitr-incr - Point-in-time recovery with incremental backup"
+        echo "  pitr-diff - Point-in-time recovery with differential backup"
+        echo "  pitr-full - Point-in-time recovery with full backup"
+        exit 1
+        ;;
+esac
+
 DOCKER_VOLUME_DIRECTORY=$BEFORE
