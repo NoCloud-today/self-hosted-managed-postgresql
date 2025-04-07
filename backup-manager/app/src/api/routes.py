@@ -15,7 +15,7 @@ async def health_check():
 @router.post("/backup/incr")
 async def create_incremental_backup():
     try:
-        result = backup_service.create_incremental_backup()
+        backup_service.create_incremental_backup()
         return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -23,7 +23,7 @@ async def create_incremental_backup():
 @router.post("/backup/full")
 async def create_full_backup():
     try:
-        result = backup_service.create_full_backup()
+        backup_service.create_full_backup()
         return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -31,7 +31,7 @@ async def create_full_backup():
 @router.post("/backup/diff")
 async def create_diff_backup():
     try:
-        result = backup_service.create_diff_backup()
+        backup_service.create_diff_backup()
         return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -46,7 +46,7 @@ async def list_backups():
 @router.post("/restore/time")
 async def restore_backup(timestamp: int):
     try:
-        result = backup_service.restore_backup_by_time(timestamp)
+        backup_service.restore_backup_by_time(timestamp)
         return {"message": "Restore completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -54,7 +54,7 @@ async def restore_backup(timestamp: int):
 @router.post("/restore/immediate")
 async def restore_immediate(database_name: str = None):
     try:
-        result = backup_service.restore_backup_immediate(database_name)
+        backup_service.restore_backup_immediate(database_name)
         return {"message": "Restore completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
