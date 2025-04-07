@@ -24,11 +24,8 @@ jobs:
     - name: Create certificates directory
       run: mkdir -p certs
 
-    - name: Make test script executable
-      run: chmod +x test-scripts/run_unit_tests.sh
-
     - name: Run tests
-      run: ./test-scripts/run_unit_tests.sh
+      run: bash run_unit_tests.sh
   integration-test:
     runs-on: ubuntu-latest
 
@@ -69,8 +66,5 @@ jobs:
         chmod 600 certs/private.key
         chmod 644 certs/public.crt
 
-    - name: Make test script executable
-      run: chmod +x test-scripts/run_integration_tests.sh
-
     - name: Run tests
-      run: ./test-scripts/run_integration_tests.sh
+      run: bash run_integration_tests.sh
