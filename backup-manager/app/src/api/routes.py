@@ -16,7 +16,7 @@ async def health_check():
 async def create_incremental_backup():
     try:
         result = backup_service.create_incremental_backup()
-        return {"message": "Backup created successfully", "details": result}
+        return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -24,7 +24,7 @@ async def create_incremental_backup():
 async def create_full_backup():
     try:
         result = backup_service.create_full_backup()
-        return {"message": "Backup created successfully", "details": result}
+        return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -32,7 +32,7 @@ async def create_full_backup():
 async def create_diff_backup():
     try:
         result = backup_service.create_diff_backup()
-        return {"message": "Backup created successfully", "details": result}
+        return {"message": "Backup created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -47,7 +47,7 @@ async def list_backups():
 async def restore_backup(timestamp: int):
     try:
         result = backup_service.restore_backup_by_time(timestamp)
-        return {"message": "Restore completed successfully", "details": result}
+        return {"message": "Restore completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -55,7 +55,7 @@ async def restore_backup(timestamp: int):
 async def restore_immediate(database_name: str = None):
     try:
         result = backup_service.restore_backup_immediate(database_name)
-        return {"message": "Restore completed successfully", "details": result}
+        return {"message": "Restore completed successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
