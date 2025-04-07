@@ -25,7 +25,7 @@ jobs:
       run: mkdir -p certs
 
     - name: Run tests
-      run: bash run_unit_tests.sh
+      run: bash test-scripts/run_unit_tests.sh
   integration-test:
     runs-on: ubuntu-latest
 
@@ -67,4 +67,4 @@ jobs:
         chmod 644 certs/public.crt
 
     - name: Run tests
-      run: bash run_integration_tests.sh
+      run: bash test-scripts/run_integration_tests.sh
