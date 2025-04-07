@@ -14,4 +14,9 @@ if [  -$TEST_EXIT_CODE -ne 0 ]; then
   echo "Integration tests failed"
   exit $TEST_EXIT_CODE
 fi
-exit $TEST_EXIT_CODE
+bash run emergency_stop_test.sh
+TEST_EXIT_CODE=$?
+if [  -$TEST_EXIT_CODE -ne 0 ]; then
+  echo "Emergency postgres stop test failed"
+  exit $TEST_EXIT_CODE
+fi
