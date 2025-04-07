@@ -19,21 +19,6 @@ services:
       interval: 3s
       timeout: 20s
       retries: 3
-  createbuckets:
-    image: minio/mc
-    depends_on:
-      backup-manager-s3:
-        condition: service_healthy
-    networks:
-      - mynetwork
-    entrypoint: >
-      /bin/sh -c "
-      echo $MINIO_ROOT_USER;
-      /usr/bin/mc alias set minio-s3 https://backup-manager-s3:9000 minioadmin minioadmin --insecure;
-      /usr/bin/mc mb minio-s3/pgbackrest --ignore-existing --insecure;
-      /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure; 
-      exit 0;
-      "
   postgres:
     container_name: postgres
     build:
@@ -45,10 +30,8 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5433:5432"
-      - "2222:22"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/postgres_data:/var/lib/postgresql/16/main
-#      - ./certs:/etc/minio/certs
     restart: always
     healthcheck:
       test: [ "CMD","su","postgres","-c","\"pg_isready\"" ]
@@ -61,8 +44,6 @@ services:
     depends_on:
       backup-manager-s3:
         condition: service_healthy
-      createbuckets:
-        condition: service_completed_successfully
   backup-manager:
     container_name: backup-manager
     build:
@@ -72,7 +53,6 @@ services:
       - POSTGRES_HOST=postgres
     ports:
       - "8000:8000"
-      - "2223:22"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/pgbackrest:/var/lib/pgbackrest
     networks:
@@ -82,6 +62,12 @@ services:
         condition: service_healthy
       backup-manager-s3:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
+      interval: 3s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 networks:
   mynetwork:
     driver: bridge

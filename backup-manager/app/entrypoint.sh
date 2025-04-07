@@ -7,4 +7,4 @@ su backup-manager -c 'ssh-keyscan -H postgres >> /home/backup-manager/.ssh/known
 
 su backup-manager "service cron start"
 
-exec su backup-manager -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+exec su backup-manager -c " uvicorn src.main:app --host 0.0.0.0 --port 8000"

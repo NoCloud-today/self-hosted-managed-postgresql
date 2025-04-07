@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:24.04
 
 ARG POSTGRES_PASSWORD
 ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     openssh-client \
     postgresql-16 \
     perl \
+    wget \
     openssh-server \
     && rm -rf /var/lib/apt/lists/*
 
@@ -59,5 +60,16 @@ COPY postgres/config/pg_hba.conf /etc/postgresql/16/main/pg_hba.conf
 
 COPY postgres/scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+RUN wget https://dl.min.io/client/mc/release/linux-amd64/mc && \
+    mv mc /usr/bin/mc && \
+    chmod +x /usr/bin/mc
+
+USER postgres
+RUN mkdir -p /var/lib/postgresql/16/main && \
+chown postgres:postgres /var/lib/postgresql/16/main && \
+chmod 700 /var/lib/postgresql/16/main
+
+USER root
 
 ENTRYPOINT ["/entrypoint.sh"]
