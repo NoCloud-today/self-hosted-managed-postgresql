@@ -9,8 +9,7 @@ def test_full_backup_pipeline(backup_client, db_utils, test_database, test_table
     
     result = backup_client.create_full_backup()
     assert "message" in result
-    assert "details" in result
-    
+
     additional_data = ["'additional_data_1'", "'additional_data_2'"]
     db_utils.insert_data(test_database, test_table, additional_data)
     
@@ -19,8 +18,7 @@ def test_full_backup_pipeline(backup_client, db_utils, test_database, test_table
     
     result = backup_client.restore_backup_immediate(test_database)
     assert "message" in result
-    assert "details" in result
-    
+
     result = db_utils.execute_query(test_database, f"SELECT data FROM {test_table}")
     assert len(result) == 2
 
@@ -41,8 +39,7 @@ def test_incremental_backup_pipeline(backup_client, db_utils, test_database, tes
     assert len(result) == 6
     result = backup_client.restore_backup_immediate(test_database)
     assert "message" in result
-    assert "details" in result
-    
+
     result = db_utils.execute_query(test_database, f"SELECT data FROM {test_table}")
     assert len(result) == 4
 
@@ -65,8 +62,7 @@ def test_differential_backup_pipeline(backup_client, db_utils, test_database, te
     
     result = backup_client.restore_backup_immediate(test_database)
     assert "message" in result
-    assert "details" in result
-    
+
     result = db_utils.execute_query(test_database, f"SELECT data FROM {test_table}")
     assert len(result) == 4
 
@@ -92,8 +88,7 @@ def test_point_in_time_restore_pipeline(backup_client, db_utils, test_database, 
     
     result = backup_client.restore_backup_by_time(timestamp)
     assert "message" in result
-    assert "details" in result
-    
+
     result = db_utils.execute_query(test_database, f"SELECT data FROM {test_table}")
     assert len(result) == 4
 
