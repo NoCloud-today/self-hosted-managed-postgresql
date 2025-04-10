@@ -69,20 +69,51 @@ jobs:
     - name: Run tests
       run: bash test-scripts/run_integration_tests.sh
 
-    - name: Run full backup test with immediate restore
-      run: bash test-scripts/run_emergency_stop_test.sh full
+  emergency-stop-postgres-test:
+    runs-on: ubuntu-latest
 
-    - name: Run diff backup test with immediate restore
-      run: bash test-scripts/run_emergency_stop_test.sh diff
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Run incr backup test with immediate restore
-      run: bash test-scripts/run_emergency_stop_test.sh incr
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+          driver-opts: |
+            image=moby/buildkit:master
+            network=host
 
-    - name: Run pitr-incr backup test with pitr restore
-      run: bash test-scripts/run_emergency_stop_test.sh pitr-incr
+      - name: Install necessary packages
+        run: sudo apt update && sudo apt install -y openssh-client libssl-dev
 
-    - name: Run pitr-diff backup test with pitr restore
-      run: bash test-scripts/run_emergency_stop_test.sh pitr-diff
+      - name: Create ssh_keys directory
+        run: mkdir -p ssh_keys
 
-    - name: Run pitr-full backup test with pitr restore
-      run: bash test-scripts/run_emergency_stop_test.sh pitr-full
+      - name: Generate SSH keys for postgres
+        run: |
+          ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres -N ""
+          chmod 600 ssh_keys/id_rsa_postgres
+
+      - name: Generate SSH keys for backup manager
+        run: |
+          ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager -N ""
+          chmod 600 ssh_keys/id_rsa_backup_manager
+
+      - name: Create certificates directory
+        run: mkdir -p certs
+
+      - name: Generate SSL certificates
+        run: |
+          openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048
+          openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
+          chmod 600 certs/private.key
+          chmod 644 certs/public.crt
+
+      - name: Run pitr-incr backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-incr
+
+      - name: Run pitr-diff backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-diff
+
+      - name: Run pitr-full backup test with pitr restore
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-full

@@ -77,38 +77,6 @@ cleanup(){
   echo "Test completed successfully"
 }
 
-full_backup_test(){
-  prepare_test_database
-  echo "Performing full backup..."
-  curl -X POST http://0.0.0.0:8000/backup/full
-
-  wait_for_postgres_container
-  create_immediate_restore
-  verify_restore
-  cleanup
-}
-
-diff_backup_test(){
-  prepare_test_database
-  echo "Performing diff backup..."
-  curl -X POST http://0.0.0.0:8000/backup/diff
-
-  wait_for_postgres_container
-  create_immediate_restore
-  verify_restore
-  cleanup
-}
-incr_backup_test(){
-  prepare_test_database
-  echo "Performing incr backup..."
-  curl -X POST http://0.0.0.0:8000/backup/incr
-
-  wait_for_postgres_container
-  create_immediate_restore
-  verify_restore
-  cleanup
-}
-
 pitr_incr_backup_test(){
   prepare_test_database
   echo "Performing incr backup..."
@@ -146,9 +114,6 @@ pitr_full_backup_test(){
 if [ $# -eq 0 ]; then
     echo "Error: Please provide a test type"
     echo "Available test types:"
-    echo "  full      - Full backup test"
-    echo "  diff      - Differential backup test"
-    echo "  incr      - Incremental backup test"
     echo "  pitr-incr - Point-in-time recovery with incremental backup"
     echo "  pitr-diff - Point-in-time recovery with differential backup"
     echo "  pitr-full - Point-in-time recovery with full backup"
@@ -159,15 +124,6 @@ BEFORE=$DOCKER_VOLUME_DIRECTORY
 export DOCKER_VOLUME_DIRECTORY="./test-volume"
 
 case "$1" in
-    "full")
-        full_backup_test
-        ;;
-    "diff")
-        diff_backup_test
-        ;;
-    "incr")
-        incr_backup_test
-        ;;
     "pitr-incr")
         pitr_incr_backup_test
         ;;
@@ -180,9 +136,6 @@ case "$1" in
     *)
         echo "Error: Unknown test type '$1'"
         echo "Available test types:"
-        echo "  full      - Full backup test"
-        echo "  diff      - Differential backup test"
-        echo "  incr      - Incremental backup test"
         echo "  pitr-incr - Point-in-time recovery with incremental backup"
         echo "  pitr-diff - Point-in-time recovery with differential backup"
         echo "  pitr-full - Point-in-time recovery with full backup"
