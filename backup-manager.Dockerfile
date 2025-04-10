@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     python3 \
+    nano \
     python3-pip \
     cron \
     openssh-client \
