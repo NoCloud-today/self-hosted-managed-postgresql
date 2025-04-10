@@ -50,7 +50,7 @@ class BackupService:
             backups.append(Backup(
                 label=backup.get("label", ""),
                 timestamp_start=backup.get("timestamp", {}).get("start", 0),
-                timestamp_end=backup.get("timestamp", {}).get("end", 0),
+                timestamp_end=backup.get("timestamp", {}).get("stop", 0),
                 type=backup.get("type", ""),
                 size=str(backup.get("info", {}).get("size", ""))
             ))
