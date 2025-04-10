@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y \
     python3 \
+    nano \
     python3-pip \
     cron \
     openssh-client \
@@ -44,25 +45,16 @@ RUN mkdir -p /home/backup-manager/.ssh && \
     chown -R backup-manager:backup-manager /home/backup-manager/.ssh && \
     chmod 600 /home/backup-manager/.ssh/config
 
-EXPOSE 22
-COPY backup-manager/app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
 COPY backup-manager .
+RUN cd app && pip install --no-cache-dir -r requirements.txt --break-system-packages
 
-COPY backup-manager/app/scripts /app/scripts
-RUN chmod -R 755 /app/scripts && \
-    chown -R backup-manager:backup-manager /app/scripts
-
+RUN chmod -R 755 /app && \
+    chown -R backup-manager:backup-manager /app/ &&  \
+    chmod +x /app/app/scripts/*
 COPY backup-manager/app/crontab /etc/cron.d/backup-cron
 RUN chmod 0644 /etc/cron.d/backup-cron && \
     crontab /etc/cron.d/backup-cron
-
-COPY backup-manager/app/src /app/src
-RUN chmod -R 755 /app/src && \
-    chown -R backup-manager:backup-manager /app/src
-
-
-COPY backup-manager/app/entrypoint.sh /entrypoint.sh
+COPY /backup-manager/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

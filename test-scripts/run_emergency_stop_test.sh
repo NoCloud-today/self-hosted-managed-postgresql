@@ -111,10 +111,10 @@ incr_backup_test(){
 
 pitr_incr_backup_test(){
   prepare_test_database
-  TIME_TO_RESTORE=$(date +%s)
   echo "Performing incr backup..."
   curl -X POST http://0.0.0.0:8000/backup/incr
-
+  TIME_TO_RESTORE=$(date +%s)
+  sleep 3
   wait_for_postgres_container
   create_pitr_restore $TIME_TO_RESTORE
   verify_restore
@@ -122,10 +122,10 @@ pitr_incr_backup_test(){
 }
 pitr_diff_backup_test(){
   prepare_test_database
-  TIME_TO_RESTORE=$(date +%s)
   echo "Performing incr backup..."
   curl -X POST http://0.0.0.0:8000/backup/diff
-
+  TIME_TO_RESTORE=$(date +%s)
+  sleep 3
   wait_for_postgres_container
   create_pitr_restore $TIME_TO_RESTORE
   verify_restore
@@ -133,10 +133,10 @@ pitr_diff_backup_test(){
 }
 pitr_full_backup_test(){
   prepare_test_database
-  TIME_TO_RESTORE=$(date +%s)
   echo "Performing incr backup..."
   curl -X POST http://0.0.0.0:8000/backup/full
-
+  TIME_TO_RESTORE=$(date +%s)
+  sleep 3
   wait_for_postgres_container
   create_pitr_restore $TIME_TO_RESTORE
   verify_restore

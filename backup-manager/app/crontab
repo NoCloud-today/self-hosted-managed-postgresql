@@ -1,1 +1,1 @@
-0 4 * * * /scripts/backup_incr.sh >> /var/log/cron.log 2>&1
+0 4 * * * su backup-manager -c 'bash /app/app/scripts/backup_incr.sh' >> /var/log/app.log 2>&1

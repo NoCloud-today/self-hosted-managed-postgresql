@@ -35,7 +35,7 @@ def test_create_full_backup(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
@@ -49,7 +49,7 @@ def test_create_incremental_backup(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
@@ -63,7 +63,7 @@ def test_create_diff_backup(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
@@ -97,7 +97,7 @@ def test_restore_backup_by_time(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
@@ -111,7 +111,7 @@ def test_restore_backup_immediate(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
@@ -125,7 +125,7 @@ def test_restore_backup_immediate_with_database(backup_service):
             capture_output=True,
             text=True,
             check=True,
-            cwd="/app/scripts"
+            cwd="/app/app/scripts"
         )
 
 
