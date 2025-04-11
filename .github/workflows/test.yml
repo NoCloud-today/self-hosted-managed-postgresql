@@ -117,3 +117,6 @@ jobs:
 
       - name: Run pitr-full backup test with pitr restore
         run: bash test-scripts/run_emergency_stop_test.sh pitr-full
+
+      - name: Run pitr backup with empty cluster
+        run: bash test-scripts/run_emergency_stop_test.sh pitr-empty
