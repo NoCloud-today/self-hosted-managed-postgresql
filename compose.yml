@@ -34,11 +34,11 @@ services:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/postgres_data:/var/lib/postgresql/16/main
     restart: always
     healthcheck:
-      test: [ "CMD","su","postgres","-c","\"pg_isready\"" ]
+      test: ["CMD-SHELL", "su postgres -c 'pg_isready' && su postgres -c 'pgbackrest info' | grep -q 'status: ok'"]
       interval: 3s
       timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     networks:
       - mynetwork
     depends_on:
@@ -64,7 +64,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
-      interval: 3s
+      interval: 10s
       timeout: 10s
       retries: 3
       start_period: 10s
