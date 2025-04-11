@@ -25,7 +25,6 @@ initialize_database(){
   if su postgres -c "pgbackrest info" | grep -q "stanza: main"; then
     recover_database
   else
-    su postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD:-postgres}';\""
     start_database
   fi
 }
@@ -48,7 +47,7 @@ else
 fi
 
 
-
+su postgres -c "psql -c \"ALTER USER postgres WITH PASSWORD '${POSTGRES_PASSWORD:-postgres}';\""
 if  ! su postgres -c "pgbackrest info" | grep -q "stanza: main"; then
     initialize_stanza
 fi
