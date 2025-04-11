@@ -17,6 +17,7 @@ fi
 bash test-scripts/run_emergency_stop_test.sh pitr-full
 bash test-scripts/run_emergency_stop_test.sh pitr-diff
 bash test-scripts/run_emergency_stop_test.sh pitr-incr
+bash test-scripts/run_emergency_stop_test.sh pitr-empty
 
 TEST_EXIT_CODE=$?
 if [  -$TEST_EXIT_CODE -ne 0 ]; then

@@ -61,14 +61,30 @@ class BackupService:
         tz_offset = timezone(timedelta(hours=0))
         dt = datetime.fromtimestamp(timestamp, tz_offset)
         iso_time = dt.replace(microsecond=0).isoformat()
-        return self._run_command(["./restore_time.sh", iso_time], cwd=self.scripts_directory)
+        try:
+            return self._run_command(["./restore_time.sh", iso_time], cwd=self.scripts_directory)
+        except Exception as e:
+            log.info("Point in time recovery failed")
+            self._start_database()
+            raise e
+
+    def _start_database(self):
+        log.info("Starting database")
+        result = self._run_command(["./start.sh"], cwd=self.scripts_directory)
+        log.info("Result of starting database: ")
+        log.info(result)
 
     def restore_backup_immediate(self, database_name: str = None) -> str:
         log.info("Restoring backup immediate")
         command = ["./restore_immediate.sh"]
         if database_name:
             command.append(database_name)
-        return self._run_command(command, cwd=self.scripts_directory)
+        try:
+            return self._run_command(command, cwd=self.scripts_directory)
+        except Exception as e:
+            log.info("Immediate restore failed")
+            self._start_database()
+            raise e
 
     def run_sql(self, query: str, database_name: str):
         log.info("Running SQL query: '{}' in database {}".format(query, database_name))
