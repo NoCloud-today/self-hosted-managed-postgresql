@@ -22,6 +22,9 @@ if  ! su postgres -c "pgbackrest info" | grep -q "stanza: main"; then
     /usr/bin/mc mb minio-s3/pgbackrest --ignore-existing --insecure
     /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure
     su postgres -c "pgbackrest --log-level-console=info --stanza=main stanza-create"
+fi
+if  su postgres -c "pgbackrest info" | grep -q "status: error"; then
+    echo "No backup exists, creating backup"
     su postgres -c "pgbackrest --log-level-console=info  backup --type=full --stanza=main"
 fi
 tail -f /var/log/postgresql/postgresql.log
