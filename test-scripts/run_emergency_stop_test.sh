@@ -19,7 +19,8 @@ wait_for_health() {
 
 start_containers(){
   echo "Starting containers..."
-  docker compose up -d --build
+  docker compose -f compose.s3.yml up  -d --wait
+  docker compose -f compose.yml up -d --build
 
   echo "Waiting for containers to be healthy..."
   wait_for_health

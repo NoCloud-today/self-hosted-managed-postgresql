@@ -4,11 +4,6 @@ services:
   test:
     build:
       dockerfile: backup-manager.test-endpoints.Dockerfile
-    depends_on:
-      postgres:
-        condition: service_healthy
-      backup-manager:
-        condition: service_healthy
     command: pytest -v --cov=src --cov-report=term-missing
     networks:
       - mynetwork

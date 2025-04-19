@@ -30,9 +30,6 @@ initialize_database(){
 }
 initialize_stanza(){
   echo "Stanza does not exist, creating new"
-  /usr/bin/mc alias set minio-s3 https://backup-manager-s3:9000 minioadmin minioadmin --insecure
-  /usr/bin/mc mb minio-s3/pgbackrest --ignore-existing --insecure
-  /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure
   su postgres -c "pgbackrest --log-level-console=info --stanza=main stanza-create"
 }
 service ssh restart
