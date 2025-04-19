@@ -112,7 +112,8 @@ cleanup(){
   docker compose logs postgres
   docker compose logs backup-manager
 
-  docker compose down -v
+  docker compose -f compose.yml down -v
+  docker compose -f compose.s3.yml down -v
   sudo rm -rf "./test-volume"
 
 }
