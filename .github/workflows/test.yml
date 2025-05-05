@@ -36,7 +36,7 @@ jobs:
 
     - name: Run tests
       run: bash test-scripts/run_unit_tests.sh
-  integration-test:
+  e2e-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -67,7 +67,7 @@ jobs:
         echo 'PG_VERSION=16' >> .env
 
     - name: Run tests
-      run: bash test-scripts/run_integration_tests.sh
+      run: bash test-scripts/run_e2e_tests.sh
 
   emergency-stop-postgres-test:
     runs-on: ubuntu-latest
