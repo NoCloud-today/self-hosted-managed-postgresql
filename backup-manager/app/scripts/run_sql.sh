@@ -7,16 +7,16 @@ fi
 
 DATABASE_NAME=$1
 SQL_QUERY=$2
-ssh postgres@postgres << EOF
-  echo "OUTPUT:"
-  psql -d "$DATABASE_NAME" \
-       -c "$SQL_QUERY" \
-       --quiet \
-       --no-psqlrc \
-       --no-align \
-       --tuples-only \
-       --field-separator=","
-EOF
+echo "OUTPUT:"
+PGPASSWORD=$POSTGRES_PASSWORD psql -d "$DATABASE_NAME" \
+   -c "$SQL_QUERY" \
+   -U postgres \
+   -h pg-tls \
+   --quiet \
+   --no-psqlrc \
+   --no-align \
+   --tuples-only \
+   --field-separator=","
 
 if [ $? -ne 0 ]; then
     exit 1
