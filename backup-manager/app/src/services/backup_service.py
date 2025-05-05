@@ -6,7 +6,7 @@ from typing import List
 
 from app.src.api.models import Backup
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('uvicorn.error')
 
 
 class BackupService:
@@ -15,8 +15,8 @@ class BackupService:
     def _run_command(command: List[str], cwd: str = None) -> str:
         try:
             result = subprocess.run(command, capture_output=True, text=True, check=True, cwd=cwd)
-            log.info("Running command: {}".format(command))
-            log.info("Output: {}".format(result.stdout))
+            log.debug("Running command: {}".format(command))
+            log.debug("Output: {}".format(result.stdout))
             return result.stdout
         except subprocess.CalledProcessError as e:
             raise Exception(f"Command failed: {e.stderr}")
@@ -41,7 +41,12 @@ class BackupService:
     def list_backups(self) -> List[Backup]:
         log.info("Getting list of backups")
         result = self._run_command(["./backup_info.sh"], cwd=self.scripts_directory)
-        info = json.loads(result)
+        log.debug(f"Result of calling list of backups is: {result}")
+        try:
+            info = json.loads(result)
+        except Exception as e:
+            log.exception(f"Error parsing backup info {e}")
+            raise e
         if len(info) == 0:
             raise Exception("No backups found")
 
