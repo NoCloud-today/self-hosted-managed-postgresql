@@ -3,15 +3,9 @@
 
 ## How to start?
 
-1. Generate SSH keys:
+1. Generate certs
    ```bash
-   ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres
-   ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager
+   bash generate-certs.sh
    ```
-2. Create `certs` directory and make certificates 
-   ```bash
-   mkdir -p certs
-   openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048
-   openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
-   ```
-2. Run docker-compose.yml
+2. Prepare environment variables (which are mandatory in compose.yml)
+3. Run docker-compose.yml
