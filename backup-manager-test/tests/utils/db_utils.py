@@ -8,7 +8,7 @@ class PostgresUtils:
             "dbname": "postgres",
             "user": "postgres",
             "password": "postgres",
-            "host": "postgres",
+            "host": "pg-tls",
             "port": "5432"
         }
 
