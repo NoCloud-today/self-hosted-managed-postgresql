@@ -1,46 +1,91 @@
 services:
-  postgres:
-    container_name: postgres
+  pg-tls:
     build:
       context: .
-      dockerfile: postgres.Dockerfile
+      dockerfile: ./pg-tls.Dockerfile
       args:
-        - POSTGRES_PASSWORD=postgres
+        BACKREST_VERSION: ${BACKREST_VERSION}
+        PG_VERSION: ${PG_VERSION}
+    image: woblerr/pg-pgbackrest:${BACKREST_VERSION}
+    container_name: pg-tls
+    hostname: pg-tls
+    command: /var/lib/postgresql/pg_prepare.sh
     environment:
-      POSTGRES_PASSWORD: postgres
+      - "BACKREST_UID"
+      - "BACKREST_GID"
+      - "BACKREST_HOST_TYPE=tls"
+      - "BACKREST_VERSION=2.54.2"
+      - "PG_VERSION"
+      - "POSTGRES_PASSWORD=postgres"
     ports:
       - "5433:5432"
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/postgres_data:/var/lib/postgresql/16/main
-    restart: always
+      - ${DOCKER_VOLUME_DIRECTORY:-./volume}/postgres_data:/var/lib/postgresql/${PG_VERSION}/main
     healthcheck:
-      test: ["CMD-SHELL", "su postgres -c 'pg_isready' && su postgres -c 'pgbackrest info' | grep -q 'status: ok'"]
+      test: [ "CMD-SHELL", "su postgres -c 'pg_isready'" ]
       interval: 3s
       timeout: 10s
       retries: 5
       start_period: 30s
-    networks:
-      - mynetwork
     depends_on:
-      createbuckets:
+      createbucket:
         condition: service_completed_successfully
+      backup_server-tls:
+        condition: service_started
+    networks:
+      - backup-network
+  backup_server-tls:
+    image: woblerr/pgbackrest:${BACKREST_VERSION}
+    container_name: backup_server-tls
+    hostname: backup_server-tls
+    volumes:
+      - ./certs/pgbackrest/:/etc/pgbackrest/cert
+      - ./backup-manager/config/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf
+      - ${DOCKER_VOLUME_DIRECTORY:-./volume}/pgbackrest:/var/lib/pgbackrest
+    environment:
+      - "BACKREST_UID"
+      - "BACKREST_GID"
+      - "BACKREST_VERSION=2.54.2"
+      - "BACKREST_TLS_SERVER=enable"
+    expose:
+      - "8432"
+    depends_on:
+      createbucket:
+        condition: service_completed_successfully
+    networks:
+      - backup-network
   backup-manager:
     container_name: backup-manager
     build:
       context: .
-      dockerfile: backup-manager.Dockerfile
+      dockerfile: ./backup-manager.Dockerfile
+      args:
+        BACKREST_VERSION: ${BACKREST_VERSION}
     environment:
-      - POSTGRES_HOST=postgres
+      - "BACKREST_UID"
+      - "BACKREST_GID"
+      - "BACKREST_VERSION=2.54.2"
+      - "BACKREST_TLS_SERVER=disable"
+      - "PG_VERSION"
+      - "POSTGRES_VOLUME_DIRECTORY=$PWD/volume/postgres_data"
+      - "POSTGRES_CONFIG=$PWD/postgres/config"
+      - "CERTS_DIRECTORY_FOR_INTERNAL_CONTAINER=$PWD/certs/pgbackrest"
+      - "POSTGRES_PASSWORD=postgres"
     ports:
       - "8000:8000"
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/pgbackrest:/var/lib/pgbackrest
+      - ${DOCKER_VOLUME_DIRECTORY:-./volume}/pgbackrest:/var/lib/pgbackrest
+      - ./backup-manager/config/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: /home/pgbackrest/backup_prepare.sh
     networks:
-      - mynetwork
+      - backup-network
     depends_on:
-      postgres:
+      pg-tls:
         condition: service_healthy
-      createbuckets:
+      backup_server-tls:
+        condition: service_started
+      createbucket:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
@@ -48,21 +93,21 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-  createbuckets:
+  createbucket:
     image: minio/mc
     environment:
       MINIO_HOST: https://backup-manager-s3:9000
       MINIO_USER: minioadmin
       MINIO_PASSWORD: minioadmin
     networks:
-      - mynetwork
+      - backup-network
     entrypoint: >
       /bin/sh -c "
       /usr/bin/mc alias set minio-s3 $${MINIO_HOST} $${MINIO_USER} $${MINIO_PASSWORD} --insecure;
       /usr/bin/mc mb minio-s3/pgbackrest --ignore-existing --insecure;
-      /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure; 
+      /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure;
       exit 0;
       "
 networks:
-  mynetwork:
+  backup-network:
     driver: bridge

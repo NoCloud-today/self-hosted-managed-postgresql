@@ -9,16 +9,16 @@ services:
       - "9001:9001"
       - "9000:9000"
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/minio:/minio_data
-      - ./certs:/root/.minio/certs
+      - ${DOCKER_VOLUME_DIRECTORY:-./volume}/minio:/minio_data
+      - ./certs/minio:/root/.minio/certs
     command: minio server /minio_data --console-address ":9001" --address ":9000" --certs-dir "/root/.minio/certs"
     networks:
-      - mynetwork
+      - backup-network
     healthcheck:
       test: [ "CMD", "curl", "-k", "-f", "https://localhost:9000/minio/health/live" ]
       interval: 3s
       timeout: 20s
       retries: 3
 networks:
-  mynetwork:
+  backup-network:
     driver: bridge
