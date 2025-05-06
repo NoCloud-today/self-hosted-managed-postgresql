@@ -58,3 +58,8 @@ openssl x509 -req -extensions v3_req -CAcreateserial \
     -extfile pgbackrest-selfsigned-client.cnf
 
 openssl x509 -in pgbackrest-selfsigned-client.crt -text -noout
+
+chmod 755 ../pgbackrest
+chmod 600 pgbackrest-selfsigned-*.key
+chmod 644 pgbackrest-selfsigned-*.crt
+chmod 644 pgbackrest-selfsigned-ca.crt
