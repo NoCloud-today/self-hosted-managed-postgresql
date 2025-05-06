@@ -11,7 +11,7 @@ echo "OUTPUT:"
 PGPASSWORD=$POSTGRES_PASSWORD psql -d "$DATABASE_NAME" \
    -c "$SQL_QUERY" \
    -U postgres \
-   -h pg-tls \
+   -h pg \
    --quiet \
    --no-psqlrc \
    --no-align \

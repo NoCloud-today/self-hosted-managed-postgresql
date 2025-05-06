@@ -2,4 +2,4 @@
 set -e
 echo "Stopping PostgreSQL..."
 
-docker stop pg-tls
+docker stop pg

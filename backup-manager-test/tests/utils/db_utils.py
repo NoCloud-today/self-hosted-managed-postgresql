@@ -8,7 +8,7 @@ class PostgresUtils:
             "dbname": "postgres",
             "user": "postgres",
             "password": "postgres",
-            "host": "pg-tls",
+            "host": "pg",
             "port": "5432"
         }
 
@@ -63,3 +63,6 @@ class PostgresUtils:
             with conn.cursor() as cur:
                 cur.execute(f"TRUNCATE TABLE {table}")
                 conn.commit()
+
+utils = PostgresUtils()
+utils.create_database("database")

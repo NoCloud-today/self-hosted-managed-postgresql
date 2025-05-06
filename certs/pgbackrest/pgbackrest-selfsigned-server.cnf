@@ -23,4 +23,4 @@ subjectAltName = @alt_names
 
 [ alt_names ]
 DNS.1 = backup_server-tls
-DNS.2 = pg-tls
+DNS.2 = pg

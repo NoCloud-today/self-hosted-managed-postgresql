@@ -1,14 +1,14 @@
 services:
-  pg-tls:
+  pg:
     build:
       context: .
-      dockerfile: ./pg-tls.Dockerfile
+      dockerfile: pg.Dockerfile
       args:
         BACKREST_VERSION: ${BACKREST_VERSION}
         PG_VERSION: ${PG_VERSION}
     image: woblerr/pg-pgbackrest:${BACKREST_VERSION}
-    container_name: pg-tls
-    hostname: pg-tls
+    container_name: pg
+    hostname: pg
     command: /var/lib/postgresql/pg_prepare.sh
     environment:
       - "BACKREST_UID"
@@ -81,7 +81,7 @@ services:
     networks:
       - backup-network
     depends_on:
-      pg-tls:
+      pg:
         condition: service_healthy
       backup_server-tls:
         condition: service_started
