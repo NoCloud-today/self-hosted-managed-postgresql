@@ -17,6 +17,5 @@ docker run --rm \
   -v "$CERTS_DIRECTORY_FOR_INTERNAL_CONTAINER:/etc/pgbackrest/certs" \
   woblerr/pgbackrest:$BACKREST_VERSION \
   -c "
-    rm -f /var/lib/postgresql/${PG_VERSION}/main/postmaster.pid && \
     $CONTAINER_COMMAND
   "

@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-DATABASE_SETTINGS="-c config_file=/etc/postgresql/$PG_VERSION/$PG_CLUSTER/postgresql.conf -c hba_file=/etc/postgresql/$PG_VERSION/$PG_CLUSTER/pg_hba.conf"
 start_database_foreground(){
-  pg_ctlcluster "${PG_VERSION}" ${PG_CLUSTER} start --foreground -o "$DATABASE_SETTINGS"
+  pg_ctlcluster "${PG_VERSION}" ${PG_CLUSTER} start --foreground
 }
 start_database(){
-    pg_ctlcluster "${PG_VERSION}" ${PG_CLUSTER} start -o "$DATABASE_SETTINGS"
+  pg_ctlcluster "${PG_VERSION}" ${PG_CLUSTER} start
 }
 stop_database(){
   pg_ctlcluster "${PG_VERSION}" ${PG_CLUSTER} stop
@@ -53,6 +52,9 @@ PG_VERSION_FILE="/var/lib/postgresql/$PG_VERSION/$PG_CLUSTER/PG_VERSION"
 if [ ! -s "$PG_VERSION_FILE" ]; then
   prepare_database
 fi
+echo "Giving permissions for data directories for BACKREST_USER"
 chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
 chmod -R 750 "$PG_DATA"
+
+echo "Starting database"
 start_database_foreground
