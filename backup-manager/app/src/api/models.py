@@ -11,4 +11,4 @@ class Backup:
 @dataclass
 class SQLRequest:
     query: str
-    database_name: str = "postgres"
+    database_name: str

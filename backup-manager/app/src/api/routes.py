@@ -66,3 +66,19 @@ async def run_sql(request: SQLRequest):
         return {"message": "SQL executed successfully", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/database/")
+async def create_database(database_name: str):
+    try:
+        backup_service.create_database(database_name)
+        return {"message": f"Created database {database_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/database/")
+async def create_database(database_name: str):
+    try:
+        backup_service.drop_database(database_name)
+        return {"message": f"Dropped database {database_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

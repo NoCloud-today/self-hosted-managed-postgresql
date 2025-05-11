@@ -1,30 +1,36 @@
 import json
 import logging
 import subprocess
-from datetime import datetime, timezone, timedelta
-from typing import List
+from datetime import datetime
+from typing import List, Optional, Dict, Any
 
+import psycopg2
 from app.src.api.models import Backup
+from psycopg2 import sql
 
 log = logging.getLogger('uvicorn.error')
 
 
 class BackupService:
+    def __init__(self, db_params: Optional[Dict[str, Any]] = None):
+        self.db_params = db_params or {
+            "dbname": "postgres",
+            "user": "postgres",
+            "password": "postgres",
+            "host": "pg",
+            "port": "5432"
+        }
+
     scripts_directory = "/app/app/scripts"
-    @staticmethod
-    def _run_command(command: List[str], cwd: str = None) -> str:
-        try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True, cwd=cwd)
-            log.debug("Running command: {}".format(command))
-            log.debug("Output: {}".format(result.stdout))
-            return result.stdout
-        except subprocess.CalledProcessError as e:
-            raise Exception(f"Command failed: {e.stderr}")
 
     @staticmethod
-    def _get_formatted_result(unformatted_output: str) -> str:
-        start_index = str.find(unformatted_output, "OUTPUT:")
-        return unformatted_output[start_index + len("OUTPUT:"):].strip()
+    def _run_command(command: List[str], cwd: str = None) -> str:
+        result = subprocess.run(command, capture_output=True, text=True, cwd=cwd)
+        log.debug("Running command: {}".format(command))
+        log.debug("Output: {}".format(result.stdout))
+        if result.returncode == 0:
+            return result.stdout
+        raise Exception(f"Command failed: {result.stderr}")
 
     def create_incremental_backup(self) -> str:
         log.info("Creating incremental backup")
@@ -63,13 +69,14 @@ class BackupService:
 
     def restore_backup_by_time(self, timestamp: int) -> str:
         log.info("Restoring backup by time")
-        tz_offset = timezone(timedelta(hours=0))
-        dt = datetime.fromtimestamp(timestamp, tz_offset)
-        iso_time = dt.replace(microsecond=0).isoformat()
+        dt = datetime.fromtimestamp(timestamp)
+        formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
         try:
-            return self._run_command(["./restore_time.sh", iso_time], cwd=self.scripts_directory)
+            log.info("Restoring backup by time (timestamp: {}, formatted: {})".format(timestamp, formatted_time))
+            return self._run_command(["./restore_time.sh", formatted_time], cwd=self.scripts_directory)
         except Exception as e:
-            log.info("Point in time recovery failed")
+            log.error("Point in time recovery failed")
+            log.exception(e)
             self._start_database()
             raise e
 
@@ -91,11 +98,38 @@ class BackupService:
             self._start_database()
             raise e
 
+    def _get_db_connection(self, dbname: Optional[str] = None) -> psycopg2.extensions.connection:
+        params = self.db_params.copy()
+        if dbname:
+            params["dbname"] = dbname
+        return psycopg2.connect(**params)
+
     def run_sql(self, query: str, database_name: str):
         log.info("Running SQL query: '{}' in database {}".format(query, database_name))
-        result = self._run_command([
-            "./run_sql.sh",
-            database_name,
-            query
-        ], cwd=self.scripts_directory)
-        return BackupService._get_formatted_result(result)
+        with self._get_db_connection(database_name) as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                if cur.description is not None:
+                    return cur.fetchall()
+                else:
+                    return "Completed successfully"
+
+    def create_database(self, dbname: str) -> None:
+        con = self._get_db_connection()
+        con.autocommit = True
+        cur = con.cursor()
+        cur.execute(sql.SQL('CREATE DATABASE {};')
+        .format(
+            sql.Identifier(dbname)
+        ))
+        con.close()
+
+    def drop_database(self, dbname: str) -> None:
+        con = self._get_db_connection()
+        con.autocommit = True
+        cur = con.cursor()
+        cur.execute(sql.SQL('DROP DATABASE {};')
+        .format(
+            sql.Identifier(dbname)
+        ))
+        con.close()
