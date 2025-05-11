@@ -32,7 +32,7 @@ class BackupClient:
         return response.json()
 
     def restore_backup_by_time(self, timestamp: int) -> dict:
-        response = requests.post(f"{self.base_url}/restore/time", params={"timestamp": timestamp}, timeout=60)
+        response = requests.post(f"{self.base_url}/restore/time", params={"timestamp": timestamp}, timeout=1000)
         response.raise_for_status()
         print("Response:", response)
         return response.json()
