@@ -96,20 +96,20 @@ create_pitr_restore(){
 }
 delete_postgres_container(){
   echo "Killing postgres container"
-  docker kill postgres
+  docker kill pg
   echo "Removing all from directory $DOCKER_VOLUME_DIRECTORY/postgres_data"
   ls "$DOCKER_VOLUME_DIRECTORY/postgres_data"
   sudo rm -rf "$DOCKER_VOLUME_DIRECTORY/postgres_data"
   echo "After removing: "
   ls -a "$DOCKER_VOLUME_DIRECTORY"
 
-  docker start postgres
+  docker start pg
 
   sleep 20
 }
 cleanup(){
   echo "Cleaning up..."
-  docker compose logs postgres
+  docker compose logs pg
   docker compose logs backup-manager
 
   docker compose -f compose.yml down -v
