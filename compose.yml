@@ -10,6 +10,7 @@ services:
     container_name: pg
     hostname: pg
     command: /var/lib/postgresql/pg_prepare.sh
+    stop_grace_period: 20s
     environment:
       - "BACKREST_UID"
       - "BACKREST_GID"
@@ -28,8 +29,6 @@ services:
       retries: 5
       start_period: 30s
     depends_on:
-      createbucket:
-        condition: service_completed_successfully
       backup_server-tls:
         condition: service_started
     networks:
@@ -49,9 +48,6 @@ services:
       - "BACKREST_TLS_SERVER=enable"
     expose:
       - "8432"
-    depends_on:
-      createbucket:
-        condition: service_completed_successfully
     networks:
       - backup-network
   backup-manager:
@@ -85,29 +81,12 @@ services:
         condition: service_healthy
       backup_server-tls:
         condition: service_started
-      createbucket:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
       interval: 10s
       timeout: 10s
       retries: 3
       start_period: 10s
-  createbucket:
-    image: minio/mc
-    environment:
-      MINIO_HOST: https://backup-manager-s3:9000
-      MINIO_USER: minioadmin
-      MINIO_PASSWORD: minioadmin
-    networks:
-      - backup-network
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set minio-s3 $${MINIO_HOST} $${MINIO_USER} $${MINIO_PASSWORD} --insecure;
-      /usr/bin/mc mb minio-s3/pgbackrest --ignore-existing --insecure;
-      /usr/bin/mc anonymous set public minio-s3/pgbackrest --insecure;
-      exit 0;
-      "
 networks:
   backup-network:
     driver: bridge
