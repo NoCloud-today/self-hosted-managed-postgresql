@@ -8,13 +8,10 @@ if [ -z "$TARGET_TIME" ]; then
     exit 1
 fi
 
-FORMATTED_TIME=$(date -d "$TARGET_TIME" "+%Y-%m-%d %H:%M:%S+00")
-
 ./stop.sh
-sleep 2
 
 echo "Running pgbackrest point in time recovery"
-./run_container.sh "pgbackrest --stanza=main --log-level-console=info --type=time \"--target=${FORMATTED_TIME}\" --target-action=promote --delta restore"
+./run_container.sh "pgbackrest --stanza=main --log-level-console=info --type=time \"--target=${TARGET_TIME}\" --target-action=promote --delta restore"
 sleep 2
 
 ./start.sh
