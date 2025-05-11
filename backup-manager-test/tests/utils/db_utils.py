@@ -63,6 +63,3 @@ class PostgresUtils:
             with conn.cursor() as cur:
                 cur.execute(f"TRUNCATE TABLE {table}")
                 conn.commit()
-
-utils = PostgresUtils()
-utils.create_database("database")
