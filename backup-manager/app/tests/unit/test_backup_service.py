@@ -27,49 +27,46 @@ def mock_backup_info():
 
 def test_create_full_backup(backup_service):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Backup completed successfully")
+        mock_run.return_value = MagicMock(stdout="Backup completed successfully", returncode=0)
         result = backup_service.create_full_backup()
         assert result == "Backup completed successfully"
         mock_run.assert_called_once_with(
             ["./backup_full.sh"],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
 
 def test_create_incremental_backup(backup_service):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Incremental backup completed")
+        mock_run.return_value = MagicMock(stdout="Incremental backup completed", returncode=0)
         result = backup_service.create_incremental_backup()
         assert result == "Incremental backup completed"
         mock_run.assert_called_once_with(
             ["./backup_incr.sh"],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
 
 def test_create_diff_backup(backup_service):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Differential backup completed")
+        mock_run.return_value = MagicMock(stdout="Differential backup completed", returncode=0)
         result = backup_service.create_diff_backup()
         assert result == "Differential backup completed"
         mock_run.assert_called_once_with(
             ["./backup_diff.sh"],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
 
 def test_list_backups(backup_service, mock_backup_info):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout=str(mock_backup_info).replace("\'", "\""))
+        mock_run.return_value = MagicMock(stdout=str(mock_backup_info).replace("\'", "\""), returncode=0)
         backups = backup_service.list_backups()
         assert len(backups) == 1
         assert isinstance(backups[0], Backup)
@@ -87,44 +84,41 @@ def test_list_backups_empty(backup_service):
 
 def test_restore_backup_by_time(backup_service):
     timestamp = 1709726400
-    expected_iso_time = "2024-03-06T12:00:00+00:00"
+    expected_iso_time = "2024-03-06 12:00:00"
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Restore completed successfully")
+        mock_run.return_value = MagicMock(stdout="Restore completed successfully", returncode=0)
         result = backup_service.restore_backup_by_time(timestamp)
         assert result == "Restore completed successfully"
         mock_run.assert_called_once_with(
             ["./restore_time.sh", expected_iso_time],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
 
 def test_restore_backup_immediate(backup_service):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Immediate restore completed")
+        mock_run.return_value = MagicMock(stdout="Immediate restore completed", returncode=0)
         result = backup_service.restore_backup_immediate()
         assert result == "Immediate restore completed"
         mock_run.assert_called_once_with(
             ["./restore_immediate.sh"],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
 
 def test_restore_backup_immediate_with_database(backup_service):
     with patch('subprocess.run') as mock_run:
-        mock_run.return_value = MagicMock(stdout="Immediate restore completed")
+        mock_run.return_value = MagicMock(stdout="Immediate restore completed", returncode=0)
         result = backup_service.restore_backup_immediate("testdb")
         assert result == "Immediate restore completed"
         mock_run.assert_called_once_with(
             ["./restore_immediate.sh", "testdb"],
             capture_output=True,
             text=True,
-            check=True,
             cwd="/app/app/scripts"
         )
 
