@@ -11,6 +11,7 @@ docker compose  -f compose.test.yml up --abort-on-container-exit --force-recreat
 TEST_EXIT_CODE=$?
 DOCKER_VOLUME_DIRECTORY=$BEFORE
 sudo rm -rf $TEST_DIRECTORY
+docker logs pg
 docker compose -f compose.yml down -v
 docker compose -f compose.test.yml down -v
 docker compose -f compose.s3.yml down -v
