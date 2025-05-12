@@ -26,8 +26,8 @@ class BackupService:
     @staticmethod
     def _run_command(command: List[str], cwd: str = None) -> str:
         result = subprocess.run(command, capture_output=True, text=True, cwd=cwd)
-        log.debug("Running command: {}".format(command))
-        log.debug("Output: {}".format(result.stdout))
+        log.info("Running command: {}".format(command))
+        log.info("Output: {}".format(result.stdout))
         if result.returncode == 0:
             return result.stdout
         raise Exception(f"Command failed: {result.stderr}")
@@ -47,7 +47,6 @@ class BackupService:
     def list_backups(self) -> List[Backup]:
         log.info("Getting list of backups")
         result = self._run_command(["./backup_info.sh"], cwd=self.scripts_directory)
-        log.debug(f"Result of calling list of backups is: {result}")
         try:
             info = json.loads(result)
         except Exception as e:

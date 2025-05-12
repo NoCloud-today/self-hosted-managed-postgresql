@@ -57,4 +57,8 @@ chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
 chmod -R 750 "$PG_DATA"
 
 echo "Starting database"
-start_database_foreground
+start_database
+
+LOG_FILE="/var/log/postgresql/postgresql-${PG_VERSION}-${PG_CLUSTER}.log"
+echo "Tailing PostgreSQL logs from: $LOG_FILE"
+tail -F "$LOG_FILE"
