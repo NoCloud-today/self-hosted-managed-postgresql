@@ -4,12 +4,10 @@ BEFORE=$DOCKER_VOLUME_DIRECTORY
 export DOCKER_VOLUME_DIRECTORY=$TEST_DIRECTORY
 
 docker compose  -f compose.s3.yml up --wait --build
-sleep 20
 docker compose  -f compose.yml up --wait --build
 
 docker logs pg
 
-sleep 20
 docker compose  -f compose.test.yml up --abort-on-container-exit --force-recreate --build
 TEST_EXIT_CODE=$?
 DOCKER_VOLUME_DIRECTORY=$BEFORE
