@@ -30,8 +30,8 @@ jobs:
         echo 'POSTGRES_PASSWORD=postgres' >> .env 
         echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
         echo 'BACKREST_VERSION=2.54.2' >> .env 
-        echo 'BACKREST_UID=1001' >> .env
-        echo 'BACKREST_GID=1001' >> .env
+        echo "BACKREST_UID=$(id -u)" >> .env
+        echo "BACKREST_UID=$(id -g)" >> .env
         echo 'PG_VERSION=16' >> .env
 
     - name: Run tests
@@ -62,8 +62,8 @@ jobs:
         echo 'POSTGRES_PASSWORD=postgres' >> .env 
         echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
         echo 'BACKREST_VERSION=2.54.2' >> .env 
-        echo 'BACKREST_UID=1001' >> .env
-        echo 'BACKREST_GID=1001' >> .env
+        echo "BACKREST_UID=$(id -u)" >> .env
+        echo "BACKREST_UID=$(id -g)" >> .env
         echo 'PG_VERSION=16' >> .env
 
     - name: Run tests
@@ -95,8 +95,8 @@ jobs:
           echo 'POSTGRES_PASSWORD=postgres' >> .env 
           echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
           echo 'BACKREST_VERSION=2.54.2' >> .env 
-          echo 'BACKREST_UID=1001' >> .env
-          echo 'BACKREST_GID=1001' >> .env
+          echo "BACKREST_UID=$(id -u)" >> .env
+          echo "BACKREST_UID=$(id -g)" >> .env
           echo 'PG_VERSION=16' >> .env
 
       - name: Run pitr-incr backup test with pitr restore
