@@ -50,8 +50,7 @@ PG_DATA="/var/lib/postgresql/${PG_VERSION}/${PG_CLUSTER}"
 PG_VERSION_FILE="/var/lib/postgresql/$PG_VERSION/$PG_CLUSTER/PG_VERSION"
 # check if database doesn't initialize
 if [ ! -s "$PG_VERSION_FILE" ]; then
-  chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
-  chmod -R 750 "$PG_DATA"
+  ls -la $PG_DATA
   prepare_database
 fi
 echo "Giving permissions for data directories for BACKREST_USER"
