@@ -38,6 +38,9 @@ RUN mkdir -p -m 700 \
         /var/lib/postgresql/.ssh
 
 COPY --chmod=600 --chown=${BACKREST_USER}:${BACKREST_GROUP} ./certs/pgbackrest /etc/pgbackrest/cert
+RUN mkdir -p /home/postgres && \
+    chown ${BACKREST_USER}:${BACKREST_GROUP} /home/postgres && \
+    mkdir -p /var/lib/postgresql/${PG_VERSION}/$PG_CLUSTER && \
+    chown -R ${BACKREST_USER}:${BACKREST_GROUP} /var/lib/postgresql
 
-RUN chown -R ${BACKREST_USER}:${BACKREST_GROUP} /var/lib/postgresql/$PG_VERSION/$PG_CLUSTER && chmod -R 750 "/var/lib/postgresql/$PG_VERSION/$PG_CLUSTER"
 ENTRYPOINT ["/entrypoint.sh"]
