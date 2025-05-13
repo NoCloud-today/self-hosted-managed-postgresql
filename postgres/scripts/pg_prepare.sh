@@ -36,7 +36,7 @@ initialize_database(){
 }
 prepare_database(){
   # if there are existing stanza - trying to restore from it, else - creating database from scratch
-  if su postgres -c "pgbackrest info" | grep -q "stanza: main"; then
+  if pgbackrest info | grep -q "stanza: main"; then
     echo "Stanza exist, trying to restore from it"
     recover_database
   else
