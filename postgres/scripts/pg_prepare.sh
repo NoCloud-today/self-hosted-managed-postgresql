@@ -51,8 +51,8 @@ PG_VERSION_FILE="/var/lib/postgresql/$PG_VERSION/$PG_CLUSTER/PG_VERSION"
 # check if database doesn't initialize
 if [ ! -s "$PG_VERSION_FILE" ]; then
   whoami
-  chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
-  chmod -R 750 "$PG_DATA"
+#  chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
+#  chmod -R 750 "$PG_DATA"
   ls -la $PG_DATA
   prepare_database
 fi
