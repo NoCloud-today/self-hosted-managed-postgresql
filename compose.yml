@@ -9,8 +9,6 @@ services:
     image: woblerr/pg-pgbackrest:${BACKREST_VERSION}
     container_name: pg
     hostname: pg
-    command: /var/lib/postgresql/pg_prepare.sh
-    stop_grace_period: 20s
     environment:
       - "BACKREST_UID"
       - "BACKREST_GID"
@@ -18,6 +16,7 @@ services:
       - "BACKREST_VERSION=2.54.2"
       - "PG_VERSION"
       - "POSTGRES_PASSWORD=postgres"
+    entrypoint: /var/lib/postgresql/pg_prepare.sh
     ports:
       - "5433:5432"
     volumes:
