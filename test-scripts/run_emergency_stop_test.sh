@@ -27,39 +27,36 @@ start_containers(){
 }
 prepare_test_database() {
   echo "Creating test database..."
-  curl -X POST http://0.0.0.0:8000/database/run \
-    -H "Content-Type: application/json" \
-    -d '{"query": "CREATE database test_database"}'
-
+  curl --location --request POST 'http://0.0.0.0:8000/database?database_name=testdb'
   echo "Creating test table..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "CREATE table test_table(id bigint)", "database_name": "test_database"}'
+    -d '{"query": "CREATE table test_table(id bigint)", "database_name": "testdb"}'
 
   echo "Inserting test data..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (1),(2)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (1),(2)", "database_name": "testdb"}'
 }
 
 verify_that_database_could_accept_write_transactions(){
   echo "Inserting data for testing that database could accept write transactions..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (3),(4)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (3),(4)", "database_name": "testdb"}'
 }
 insert_data_which_should_not_be_in_recovery(){
   echo "Inserting test data, which should not be in restored data..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (5),(6)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (5),(6)", "database_name": "testdb"}'
 }
 verify_restore_second(){
   echo "Verifying restored data..."
-  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":"1\n2\n3\n4"}'
+  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":[[1],[2],[3],[4]]}'
   ACTUAL_RESPONSE=$(curl -s -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "SELECT * from test_table", "database_name": "test_database"}')
+    -d '{"query": "SELECT * from test_table", "database_name": "testdb"}')
 
   if [ "$ACTUAL_RESPONSE" != "$EXPECTED_RESPONSE" ]; then
       echo "Test failed: Restored data verification failed"
@@ -72,10 +69,10 @@ verify_restore_second(){
 }
 verify_restore(){
   echo "Verifying restored data..."
-  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":"1\n2"}'
+  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":[[1],[2]]}'
   ACTUAL_RESPONSE=$(curl -s -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "SELECT * from test_table", "database_name": "test_database"}')
+    -d '{"query": "SELECT * from test_table", "database_name": "testdb"}')
 
   if [ "$ACTUAL_RESPONSE" != "$EXPECTED_RESPONSE" ]; then
       echo "Test failed: Restored data verification failed"

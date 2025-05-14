@@ -20,13 +20,13 @@ recover_database(){
   su "${BACKREST_USER}" <<'EOF'
   echo "Stanza exist, recover from existing stanza"
   pgbackrest --stanza=main --log-level-console=info --delta --recovery-option=recovery_target=immediate --target-action=promote --type=immediate restore
+EOF
   echo "Starting database after recovery"
   start_database
-  echo "Creating first backup"
+  echo "Creating first full backup after restore"
   create_backup
   echo "Stopping database after creating first backup"
   stop_database
-EOF
 }
 initialize_database(){
   su "${BACKREST_USER}" <<'EOF'
