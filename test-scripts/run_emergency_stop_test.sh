@@ -89,7 +89,7 @@ create_immediate_restore(){
 }
 create_pitr_restore(){
   echo "Performing pitr restore..."
-  curl -X POST http://0.0.0.0:8000/restore/immediate?timestamp="$1"
+  curl -X POST http://0.0.0.0:8000/restore/time?timestamp="$1"
 }
 delete_postgres_container(){
   echo "Killing postgres container"
