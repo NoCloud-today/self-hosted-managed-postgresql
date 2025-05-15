@@ -94,9 +94,9 @@ create_pitr_restore(){
 delete_postgres_container(){
   echo "Killing postgres container"
   docker kill pg
-  echo "Removing all from directory $DOCKER_VOLUME_DIRECTORY/postgres_data"
-  ls "$DOCKER_VOLUME_DIRECTORY/postgres_data"
-  sudo rm -rf "$DOCKER_VOLUME_DIRECTORY/postgres_data"
+  echo "Removing all from directory postgres_data"
+  ls "/var/lib/docker/volumes/postgres_data"
+  sudo rm -rf "/var/lib/docker/volumes/postgres_data"
   echo "After removing: "
   ls -a "$DOCKER_VOLUME_DIRECTORY"
 
@@ -173,7 +173,8 @@ pitr_to_empty_cluster(){
   sleep 3
   TIME_TO_RESTORE=$(date +%s)
   sleep 3
-  create_pitr_restore $TIME_TO_RESTORE
+  create_immediate_restore
+
   prepare_test_database
   verify_restore
   cleanup
