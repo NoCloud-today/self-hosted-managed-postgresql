@@ -31,4 +31,6 @@ RUN chmod -R 755 /app && \
     chmod +x /app/app/scripts/*
 
 RUN usermod -a -G docker $BACKREST_USER && chown -R ${BACKREST_USER}:${BACKREST_GROUP} /var/run
+
+COPY --chmod=755 --chown=${BACKREST_USER}:${BACKREST_GROUP} pg.Dockerfile app/pg.Dockerfile
 ENTRYPOINT ["/entrypoint.sh"]
