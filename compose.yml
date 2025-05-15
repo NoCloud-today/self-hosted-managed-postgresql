@@ -6,8 +6,9 @@ services:
       args:
         BACKREST_VERSION: ${BACKREST_VERSION}
         PG_VERSION: ${PG_VERSION}
-    image: woblerr/pg-pgbackrest:${BACKREST_VERSION}
+    image: andrewbolotsky/pg-pgbackrest:${BACKREST_VERSION}
     container_name: pg
+    stop_grace_period: 30s
     hostname: pg
     environment:
       - "BACKREST_UID"
@@ -20,13 +21,12 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-./volume}/postgres_data:/var/lib/postgresql/${PG_VERSION}/main
+      - postgres_data:/var/lib/postgresql/${PG_VERSION}/main
     healthcheck:
       test: [ "CMD-SHELL", "su postgres -c 'pg_isready'" ]
       interval: 3s
-      timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 50s
     depends_on:
       backup_server-tls:
         condition: service_started
@@ -62,7 +62,6 @@ services:
       - "BACKREST_VERSION=2.54.2"
       - "BACKREST_TLS_SERVER=disable"
       - "PG_VERSION"
-      - "POSTGRES_VOLUME_DIRECTORY=$PWD/volume/postgres_data"
       - "POSTGRES_CONFIG=$PWD/postgres/config"
       - "CERTS_DIRECTORY_FOR_INTERNAL_CONTAINER=$PWD/certs/pgbackrest"
       - "POSTGRES_PASSWORD=postgres"
@@ -89,3 +88,5 @@ services:
 networks:
   backup-network:
     driver: bridge
+volumes:
+  postgres_data:
