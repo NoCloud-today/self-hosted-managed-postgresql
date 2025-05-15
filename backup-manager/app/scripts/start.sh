@@ -1,5 +1,6 @@
 #!/bin/bash
 
-docker restart pg
+echo "Starting pg container"
+docker start pg
 
-while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done
+timeout 30s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
