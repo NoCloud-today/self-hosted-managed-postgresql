@@ -16,33 +16,28 @@ create_backup(){
   pgbackrest --log-level-console=info  backup --type=full --stanza=$PG_CLUSTER --repo 2
 EOF
 }
-recover_database(){
-  su "${BACKREST_USER}" <<'EOF'
-  echo "Stanza exist, recover from existing stanza"
-  pgbackrest --stanza=main --log-level-console=info --delta --recovery-option=recovery_target=immediate --target-action=promote --type=immediate restore
-EOF
-  echo "Starting database after recovery"
-  start_database
-  echo "Creating first full backup after restore"
-  create_backup
-  echo "Stopping database after creating first backup"
-  stop_database
-}
 prepare_database(){
   # if there are existing stanza - trying to restore from it, else - creating database from scratch
-  if pgbackrest info | grep -q "stanza: main"; then
-    echo "Stanza exist, trying to restore from it"
-    recover_database
-  else
-    echo "Initializing database"
-    initialize_database
-  fi
+  echo "Initializing database"
+  initialize_database
   echo "Database is prepared"
+}
+initialize_database(){
+  su "${BACKREST_USER}" <<'EOF'
+    echo "Cluster ${PG_VERSION}/${PG_CLUSTER} does not exist. Creating..."
+    "/usr/lib/postgresql/${PG_VERSION}/bin/initdb" -D "$PG_DATA"
+EOF
 }
 run_in_database_mode(){
   echo "Giving permissions for data directories for BACKREST_USER"
   chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
   chmod -R 750 "$PG_DATA"
+  PG_VERSION_FILE="$PG_DATA/PG_VERSION"
+  if [ ! -s "$PG_VERSION_FILE" ]; then
+    chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
+    chmod -R 750 "$PG_DATA"
+    prepare_database
+  fi
   echo "Starting database"
   start_database
   timeout 30s sh -c 'until pg_isready; do sleep 1; done'
@@ -52,6 +47,7 @@ run_in_database_mode(){
   echo "Tailing PostgreSQL logs from: $LOG_FILE"
   tail -F "$LOG_FILE"
 }
+
 run_in_recovery_mode(){
   chown "${BACKREST_USER}":"${BACKREST_GROUP}" "$PG_DATA"
   chmod -R 750 "$PG_DATA"

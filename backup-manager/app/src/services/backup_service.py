@@ -97,6 +97,18 @@ class BackupService:
             self._start_database()
             raise e
 
+    def restore_database_from_existing_stanza(self, database_name: str = None) -> str:
+        log.info("Restoring database from existing stanza")
+        command = ["./restore_database_from_existing_stanza.sh"]
+        if database_name:
+            command.append(database_name)
+        try:
+            return self._run_command(command, cwd=self.scripts_directory)
+        except Exception as e:
+            log.info("Restoring database from existing stanza failed, starting database")
+            self._start_database()
+            raise e
+
     def _get_db_connection(self, dbname: Optional[str] = None) -> psycopg2.extensions.connection:
         params = self.db_params.copy()
         if dbname:

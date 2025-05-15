@@ -59,6 +59,14 @@ async def restore_immediate(database_name: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/restore/existing")
+async def restore_database_from_existing_stanza():
+    try:
+        backup_service.restore_database_from_existing_stanza()
+        return {"message": f"Restore completed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/database/run")
 async def run_sql(request: SQLRequest):
     try:
