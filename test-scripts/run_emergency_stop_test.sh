@@ -94,11 +94,8 @@ create_pitr_restore(){
 delete_postgres_container(){
   echo "Killing postgres container"
   docker kill pg
-  echo "Removing all from directory postgres_data"
-  ls "/var/lib/docker/volumes/postgres_data"
-  sudo rm -rf "/var/lib/docker/volumes/postgres_data"
-  echo "After removing: "
-  ls -a "$DOCKER_VOLUME_DIRECTORY"
+  docker volume rm self-hosted-postgresql-management_postgres_data
+  docker volume create self-hosted-postgresql-management_postgres_data
 
   docker start pg
 
