@@ -1,12 +1,8 @@
 #!/bin/bash
 set -e
 echo "Stopping PostgreSQL..."
-if ssh postgres@postgres 'pg_isready' >/dev/null 2>&1; then
-    echo "PostgreSQL is running, stopping PostgreSQL..."
-    ssh -t postgres@postgres '/usr/lib/postgresql/16/bin/pg_ctl -D /var/lib/postgresql/16/main stop' || {
-        echo "Failed to stop PostgreSQL"
-        exit 1
-    }
-else
-    echo "PostgreSQL is not running, skipping stop operation"
+
+if docker ps --format '{{.Names}}' | grep -q '^pg$'; then
+    echo "Container is running, exec stopping cluster"
+    docker stop pg
 fi

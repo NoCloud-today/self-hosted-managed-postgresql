@@ -1,12 +1,13 @@
 from typing import List
 from fastapi import APIRouter, HTTPException
 
-from app.src.api.models import Backup
-from app.src.api.models import SQLRequest
+from app.src.api.models import Backup, SQLRequest, ScheduleRequest, ScheduledJob
 from app.src.services.backup_service import BackupService
+from app.src.services.scheduler_service import SchedulerService
 
 router = APIRouter()
 backup_service = BackupService()
+scheduler_service = SchedulerService(backup_service)
 
 @router.get("/health")
 async def health_check():
@@ -59,10 +60,59 @@ async def restore_immediate(database_name: str = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/restore/existing")
+async def restore_database_from_existing_stanza():
+    try:
+        backup_service.restore_database_from_existing_stanza()
+        return {"message": f"Restore completed successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/database/run")
 async def run_sql(request: SQLRequest):
     try:
         result = backup_service.run_sql(request.query, request.database_name)
         return {"message": "SQL executed successfully", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/database/")
+async def create_database(database_name: str):
+    try:
+        backup_service.create_database(database_name)
+        return {"message": f"Created database {database_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/database/")
+async def create_database(database_name: str):
+    try:
+        backup_service.drop_database(database_name)
+        return {"message": f"Dropped database {database_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/schedule", response_model=ScheduledJob)
+async def schedule_backup(request: ScheduleRequest):
+    try:
+        return scheduler_service.add_backup_job(request.job_type, request.hour, request.minute)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/schedule", response_model=List[ScheduledJob])
+async def list_scheduled_jobs():
+    try:
+        return scheduler_service.get_all_jobs()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/schedule/{job_id}")
+async def remove_scheduled_job(job_id: str):
+    try:
+        if scheduler_service.remove_job(job_id):
+            return {"message": f"Job {job_id} removed successfully"}
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

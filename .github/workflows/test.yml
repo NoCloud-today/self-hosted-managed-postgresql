@@ -21,12 +21,22 @@ jobs:
           image=moby/buildkit:master
           network=host
 
-    - name: Create certificates directory
-      run: mkdir -p certs
+    - name: Generate certificates
+      run: bash generate-certs.sh
+
+    - name: Prepare environment
+      run: |
+        touch .env 
+        echo 'POSTGRES_PASSWORD=postgres' >> .env 
+        echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
+        echo 'BACKREST_VERSION=2.54.2' >> .env 
+        echo "BACKREST_UID=$(id -u)" >> .env
+        echo "BACKREST_GID=$(id -g)" >> .env
+        echo 'PG_VERSION=16' >> .env
 
     - name: Run tests
       run: bash test-scripts/run_unit_tests.sh
-  integration-test:
+  e2e-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -43,31 +53,21 @@ jobs:
     - name: Install necessary packages
       run: sudo apt update && sudo apt install -y openssh-client libssl-dev
 
-    - name: Create ssh_keys directory
-      run: mkdir -p ssh_keys
+    - name: Generate certificates
+      run: bash generate-certs.sh
 
-    - name: Generate SSH keys for postgres
+    - name: Prepare environment
       run: |
-        ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres -N ""
-        chmod 600 ssh_keys/id_rsa_postgres
-
-    - name: Generate SSH keys for backup manager
-      run: |
-        ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager -N ""
-        chmod 600 ssh_keys/id_rsa_backup_manager
-
-    - name: Create certificates directory
-      run: mkdir -p certs
-
-    - name: Generate SSL certificates
-      run: |
-        openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048
-        openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
-        chmod 600 certs/private.key
-        chmod 644 certs/public.crt
+        touch .env 
+        echo 'POSTGRES_PASSWORD=postgres' >> .env 
+        echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
+        echo 'BACKREST_VERSION=2.54.2' >> .env 
+        echo "BACKREST_UID=$(id -u)" >> .env
+        echo "BACKREST_GID=$(id -g)" >> .env
+        echo 'PG_VERSION=16' >> .env
 
     - name: Run tests
-      run: bash test-scripts/run_integration_tests.sh
+      run: bash test-scripts/run_e2e_tests.sh
 
   emergency-stop-postgres-test:
     runs-on: ubuntu-latest
@@ -86,28 +86,18 @@ jobs:
       - name: Install necessary packages
         run: sudo apt update && sudo apt install -y openssh-client libssl-dev
 
-      - name: Create ssh_keys directory
-        run: mkdir -p ssh_keys
+      - name: Generate certificates
+        run: bash generate-certs.sh
 
-      - name: Generate SSH keys for postgres
+      - name: Prepare environment
         run: |
-          ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_postgres -N ""
-          chmod 600 ssh_keys/id_rsa_postgres
-
-      - name: Generate SSH keys for backup manager
-        run: |
-          ssh-keygen -t rsa -b 4096 -f ssh_keys/id_rsa_backup_manager -N ""
-          chmod 600 ssh_keys/id_rsa_backup_manager
-
-      - name: Create certificates directory
-        run: mkdir -p certs
-
-      - name: Generate SSL certificates
-        run: |
-          openssl genpkey -algorithm RSA -out certs/private.key -pkeyopt rsa_keygen_bits:2048
-          openssl req -new -x509 -key certs/private.key -out certs/public.crt -days 3650 -subj "/CN=minio"
-          chmod 600 certs/private.key
-          chmod 644 certs/public.crt
+          touch .env 
+          echo 'POSTGRES_PASSWORD=postgres' >> .env 
+          echo 'DOCKER_VOLUME_DIRECTORY=./test-volume' >> .env 
+          echo 'BACKREST_VERSION=2.54.2' >> .env 
+          echo "BACKREST_UID=$(id -u)" >> .env
+          echo "BACKREST_GID=$(id -g)" >> .env
+          echo 'PG_VERSION=16' >> .env
 
       - name: Run pitr-incr backup test with pitr restore
         run: bash test-scripts/run_emergency_stop_test.sh pitr-incr

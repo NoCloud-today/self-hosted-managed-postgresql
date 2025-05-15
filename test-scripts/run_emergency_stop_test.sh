@@ -19,46 +19,44 @@ wait_for_health() {
 
 start_containers(){
   echo "Starting containers..."
-  docker compose up -d --build
+  docker compose -f compose.s3.yml up  -d --wait
+  docker compose -f compose.yml up -d --build
 
   echo "Waiting for containers to be healthy..."
   wait_for_health
 }
 prepare_test_database() {
   echo "Creating test database..."
-  curl -X POST http://0.0.0.0:8000/database/run \
-    -H "Content-Type: application/json" \
-    -d '{"query": "CREATE database test_database"}'
-
+  curl --location --request POST 'http://0.0.0.0:8000/database?database_name=testdb'
   echo "Creating test table..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "CREATE table test_table(id bigint)", "database_name": "test_database"}'
+    -d '{"query": "CREATE table test_table(id bigint)", "database_name": "testdb"}'
 
   echo "Inserting test data..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (1),(2)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (1),(2)", "database_name": "testdb"}'
 }
 
 verify_that_database_could_accept_write_transactions(){
   echo "Inserting data for testing that database could accept write transactions..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (3),(4)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (3),(4)", "database_name": "testdb"}'
 }
 insert_data_which_should_not_be_in_recovery(){
   echo "Inserting test data, which should not be in restored data..."
   curl -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "INSERT INTO test_table(id) VALUES (5),(6)", "database_name": "test_database"}'
+    -d '{"query": "INSERT INTO test_table(id) VALUES (5),(6)", "database_name": "testdb"}'
 }
 verify_restore_second(){
   echo "Verifying restored data..."
-  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":"1\n2\n3\n4"}'
+  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":[[1],[2],[3],[4]]}'
   ACTUAL_RESPONSE=$(curl -s -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "SELECT * from test_table", "database_name": "test_database"}')
+    -d '{"query": "SELECT * from test_table", "database_name": "testdb"}')
 
   if [ "$ACTUAL_RESPONSE" != "$EXPECTED_RESPONSE" ]; then
       echo "Test failed: Restored data verification failed"
@@ -71,10 +69,10 @@ verify_restore_second(){
 }
 verify_restore(){
   echo "Verifying restored data..."
-  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":"1\n2"}'
+  EXPECTED_RESPONSE='{"message":"SQL executed successfully","result":[[1],[2]]}'
   ACTUAL_RESPONSE=$(curl -s -X POST http://0.0.0.0:8000/database/run \
     -H "Content-Type: application/json" \
-    -d '{"query": "SELECT * from test_table", "database_name": "test_database"}')
+    -d '{"query": "SELECT * from test_table", "database_name": "testdb"}')
 
   if [ "$ACTUAL_RESPONSE" != "$EXPECTED_RESPONSE" ]; then
       echo "Test failed: Restored data verification failed"
@@ -82,7 +80,6 @@ verify_restore(){
       echo "Got: $ACTUAL_RESPONSE"
       exit 1
   fi
-
   echo "Data verification successful"
 }
 create_immediate_restore(){
@@ -91,27 +88,28 @@ create_immediate_restore(){
 }
 create_pitr_restore(){
   echo "Performing pitr restore..."
-  curl -X POST http://0.0.0.0:8000/restore/immediate?timestamp="$1"
+  curl -X POST http://0.0.0.0:8000/restore/time?timestamp="$1"
 }
 delete_postgres_container(){
   echo "Killing postgres container"
-  docker kill postgres
-  echo "Removing all from directory $DOCKER_VOLUME_DIRECTORY/postgres_data"
-  ls "$DOCKER_VOLUME_DIRECTORY/postgres_data"
-  sudo rm -rf "$DOCKER_VOLUME_DIRECTORY/postgres_data"
-  echo "After removing: "
-  ls -a "$DOCKER_VOLUME_DIRECTORY"
+  docker kill pg
 
-  docker start postgres
+  docker run --rm -v self-hosted-postgresql-management_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
 
-  sleep 20
+  docker start pg
+
+  timeout 30s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
+
+  curl -X POST http://0.0.0.0:8000/restore/existing
+
 }
 cleanup(){
   echo "Cleaning up..."
-  docker compose logs postgres
+  docker compose logs pg
   docker compose logs backup-manager
 
-  docker compose down -v
+  docker compose -f compose.yml down -v
+  docker compose -f compose.s3.yml down -v
   sudo rm -rf "./test-volume"
 
 }
@@ -174,7 +172,8 @@ pitr_to_empty_cluster(){
   sleep 3
   TIME_TO_RESTORE=$(date +%s)
   sleep 3
-  create_pitr_restore $TIME_TO_RESTORE
+  create_immediate_restore
+
   prepare_test_database
   verify_restore
   cleanup
