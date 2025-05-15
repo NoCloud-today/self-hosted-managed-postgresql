@@ -80,7 +80,6 @@ verify_restore(){
       echo "Got: $ACTUAL_RESPONSE"
       exit 1
   fi
-
   echo "Data verification successful"
 }
 create_immediate_restore(){
@@ -94,12 +93,15 @@ create_pitr_restore(){
 delete_postgres_container(){
   echo "Killing postgres container"
   docker kill pg
-  docker volume rm self-hosted-postgresql-management_postgres_data
-  docker volume create self-hosted-postgresql-management_postgres_data
+
+  docker run --rm -v self-hosted-postgresql-management_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
 
   docker start pg
 
-  sleep 20
+  timeout 30s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
+
+  curl -X POST http://0.0.0.0:8000/restore/existing
+
 }
 cleanup(){
   echo "Cleaning up..."
