@@ -26,7 +26,7 @@ fi
 su "${BACKREST_USER}" <<'EOF'
   reflex db migrate; \
     redis-server --daemonize yes && \
-    exec reflex run --loglevel debug
+    exec reflex run --env prod --loglevel info
 EOF
 
 
