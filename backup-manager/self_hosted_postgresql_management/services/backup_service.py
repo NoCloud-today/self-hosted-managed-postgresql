@@ -1,17 +1,17 @@
 import json
-import logging
 import subprocess
-from datetime import datetime
-from typing import List, Optional, Dict, Any
+from datetime import datetime, timezone, timedelta
+from typing import List, Optional, Dict, Any, Tuple
 
 import psycopg2
-from app.src.api.models import Backup
+from loguru import logger as log
 from psycopg2 import sql
 
-log = logging.getLogger('uvicorn.error')
+from self_hosted_postgresql_management.api.models import Backup
+from self_hosted_postgresql_management.services.singleton import Singleton
 
 
-class BackupService:
+class BackupService(metaclass=Singleton):
     def __init__(self, db_params: Optional[Dict[str, Any]] = None):
         self.db_params = db_params or {
             "dbname": "postgres",
@@ -21,7 +21,7 @@ class BackupService:
             "port": "5432"
         }
 
-    scripts_directory = "/app/app/scripts"
+    scripts_directory = "/app/scripts"
 
     @staticmethod
     def _run_command(command: List[str], cwd: str = None) -> str:
@@ -57,18 +57,23 @@ class BackupService:
 
         backups = []
         for backup in info[0].get("backup", []):
+            error = backup.get("error", False)
+            status = "Success"
+            if error:
+                status = "Failure"
             backups.append(Backup(
                 label=backup.get("label", ""),
                 timestamp_start=backup.get("timestamp", {}).get("start", 0),
                 timestamp_end=backup.get("timestamp", {}).get("stop", 0),
                 type=backup.get("type", ""),
-                size=str(backup.get("info", {}).get("size", ""))
+                size=str(backup.get("info", {}).get("size", "")),
+                status=status
             ))
         return backups
 
     def restore_backup_by_time(self, timestamp: int) -> str:
         log.info("Restoring backup by time")
-        dt = datetime.fromtimestamp(timestamp)
+        dt = datetime.fromtimestamp(timestamp,timezone(timedelta(hours=0)))
         formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
         try:
             log.info("Restoring backup by time (timestamp: {}, formatted: {})".format(timestamp, formatted_time))
@@ -97,11 +102,27 @@ class BackupService:
             self._start_database()
             raise e
 
-    def restore_database_from_existing_stanza(self, database_name: str = None) -> str:
+    def get_databases(self) -> List[str]:
+        log.info("Getting all databases")
+        con = self._get_db_connection()
+        with con.cursor() as cur:
+            cur.execute(sql.SQL('SELECT datname FROM pg_database WHERE datistemplate = false;'))
+            databases = [value[0] for value in cur.fetchall()]
+            log.info(f"Got all databases: {databases}")
+            return databases
+
+    def get_roles(self) -> List[str]:
+        log.info("Getting roles")
+        con = self._get_db_connection()
+        with con.cursor() as cur:
+            cur.execute(sql.SQL('SELECT rolname FROM pg_roles;'))
+            roles = [value[0] for value in cur.fetchall()]
+            log.info(f"Got all roles: {roles}")
+            return roles
+
+    def restore_database_from_existing_stanza(self) -> str:
         log.info("Restoring database from existing stanza")
         command = ["./restore_database_from_existing_stanza.sh"]
-        if database_name:
-            command.append(database_name)
         try:
             return self._run_command(command, cwd=self.scripts_directory)
         except Exception as e:
@@ -115,7 +136,7 @@ class BackupService:
             params["dbname"] = dbname
         return psycopg2.connect(**params)
 
-    def run_sql(self, query: str, database_name: str):
+    def run_sql(self, query: str, database_name: str) -> list[tuple[Any, ...]] | str:
         log.info("Running SQL query: '{}' in database {}".format(query, database_name))
         with self._get_db_connection(database_name) as conn:
             with conn.cursor() as cur:

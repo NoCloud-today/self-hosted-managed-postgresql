@@ -67,6 +67,7 @@ services:
       - "POSTGRES_PASSWORD=postgres"
     ports:
       - "8000:8000"
+      - "3000:3000"
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-./volume}/pgbackrest:/var/lib/pgbackrest
       - ./backup-manager/config/pgbackrest.conf:/etc/pgbackrest/pgbackrest.conf
@@ -80,11 +81,11 @@ services:
       backup_server-tls:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/ping"]
       interval: 10s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 50s
 networks:
   backup-network:
     driver: bridge

@@ -4,17 +4,7 @@ wait_for_health() {
     local max_attempts=30
     local attempt=0
     echo "Waiting for health check to pass..."
-    while [ $attempt -lt $max_attempts ]; do
-        attempt=$((attempt + 1))
-
-        if curl -s -f http://0.0.0.0:8000/health > /dev/null; then
-            curl -s -f http://0.0.0.0:8000/health
-            echo "Health check passed"
-            return 0
-        fi
-
-        sleep 1
-    done
+    timeout 120s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} backup-manager`" != "healthy" ]; do     sleep 2; done'
 }
 
 start_containers(){

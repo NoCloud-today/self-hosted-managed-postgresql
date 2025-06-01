@@ -8,6 +8,7 @@ class Backup:
     timestamp_end: int
     type: str
     size: str
+    status: str
 
 @dataclass
 class SQLRequest:
