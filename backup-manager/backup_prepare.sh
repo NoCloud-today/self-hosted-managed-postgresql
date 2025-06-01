@@ -24,7 +24,10 @@ if  pgbackrest info | grep -q "status: error"; then
     pgbackrest --log-level-console=info  backup --type=full --stanza=$PG_CLUSTER --repo 2
 EOF
 fi
+chmod -R 777 /app/.web
 
+chown -R ${BACKREST_USER}:${BACKREST_GROUP} /app
+echo "Starting reflex server"
 su "${BACKREST_USER}" <<'EOF'
     redis-server --daemonize yes && \
     exec reflex run --env prod --loglevel info
