@@ -37,7 +37,7 @@ USER ${BACKREST_USER}
 
 ENV REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
-RUN reflex init && reflex export --frontend-only --no-zip
+RUN reflex init && reflex export --frontend-only --no-zip && reflex db init
 
 STOPSIGNAL SIGKILL
 
