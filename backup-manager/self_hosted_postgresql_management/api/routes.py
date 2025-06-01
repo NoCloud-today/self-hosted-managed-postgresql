@@ -97,7 +97,7 @@ async def run_sql(request: SQLRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@fastapi_app.post("/database/")
+@fastapi_app.post("/database")
 async def create_database(database_name: str):
     try:
         log.info("POST /database {database_name}")
@@ -108,7 +108,7 @@ async def create_database(database_name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@fastapi_app.delete("/database/")
+@fastapi_app.delete("/database")
 async def create_database(database_name: str):
     try:
         log.info(f"DELETE /database {database_name}")
