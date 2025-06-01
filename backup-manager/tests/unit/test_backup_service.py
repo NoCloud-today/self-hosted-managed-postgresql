@@ -2,8 +2,8 @@ import subprocess
 from unittest.mock import patch, MagicMock
 
 import pytest
-from app.src.api.models import Backup
-from app.src.services.backup_service import BackupService
+from self_hosted_postgresql_management.api.models import Backup
+from self_hosted_postgresql_management.services.backup_service import BackupService
 
 
 @pytest.fixture
@@ -34,7 +34,7 @@ def test_create_full_backup(backup_service):
             ["./backup_full.sh"],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts"
         )
 
 
@@ -47,7 +47,7 @@ def test_create_incremental_backup(backup_service):
             ["./backup_incr.sh"],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts/"
         )
 
 
@@ -60,7 +60,7 @@ def test_create_diff_backup(backup_service):
             ["./backup_diff.sh"],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts/"
         )
 
 
@@ -93,7 +93,7 @@ def test_restore_backup_by_time(backup_service):
             ["./restore_time.sh", expected_iso_time],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts/"
         )
 
 
@@ -106,7 +106,7 @@ def test_restore_backup_immediate(backup_service):
             ["./restore_immediate.sh"],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts/"
         )
 
 
@@ -119,7 +119,7 @@ def test_restore_backup_immediate_with_database(backup_service):
             ["./restore_immediate.sh", "testdb"],
             capture_output=True,
             text=True,
-            cwd="/app/app/scripts"
+            cwd="/app/scripts/"
         )
 
 

@@ -1,3 +1,0 @@
-"""
-Backup Manager package.
-"""

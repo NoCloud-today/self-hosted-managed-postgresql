@@ -12,6 +12,8 @@ RUN apt-get update -y \
         postgresql-contrib-${PG_VERSION} \
         cron \
         curl \
+        unzip \
+        redis-server \
     && apt-get autoremove -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -24,13 +26,21 @@ COPY --chmod=600 --chown=${BACKREST_USER}:${BACKREST_GROUP} ./certs/pgbackrest /
 COPY --chmod=755 --chown=${BACKREST_USER}:${BACKREST_GROUP} ./backup-manager/backup_prepare.sh /home/pgbackrest/backup_prepare.sh
 COPY --chmod=755 --chown=${BACKREST_USER}:${BACKREST_GROUP} backup-manager .
 
-RUN cd app && pip install --no-cache-dir -r requirements.txt --break-system-packages
+RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
 
 RUN chmod -R 755 /app && \
     chown -R ${BACKREST_USER}:${BACKREST_GROUP} /app/ &&  \
-    chmod +x /app/app/scripts/*
+    chmod +x /app/scripts/*
 
-RUN usermod -a -G docker $BACKREST_USER && chown -R ${BACKREST_USER}:${BACKREST_GROUP} /var/run
 
-COPY --chmod=755 --chown=${BACKREST_USER}:${BACKREST_GROUP} pg.Dockerfile app/pg.Dockerfile
-ENTRYPOINT ["/entrypoint.sh"]
+USER ${BACKREST_USER}
+
+ENV REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
+
+RUN reflex init && reflex export --frontend-only --no-zip
+
+STOPSIGNAL SIGKILL
+
+USER root
+
+ENTRYPOINT ["/app/backup_prepare.sh"]
