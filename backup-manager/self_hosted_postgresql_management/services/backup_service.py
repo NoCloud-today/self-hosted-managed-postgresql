@@ -1,6 +1,6 @@
 import json
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Dict, Any, Tuple
 
 import psycopg2
@@ -73,7 +73,7 @@ class BackupService(metaclass=Singleton):
 
     def restore_backup_by_time(self, timestamp: int) -> str:
         log.info("Restoring backup by time")
-        dt = datetime.fromtimestamp(timestamp)
+        dt = datetime.fromtimestamp(timestamp,timezone(timedelta(hours=0)))
         formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
         try:
             log.info("Restoring backup by time (timestamp: {}, formatted: {})".format(timestamp, formatted_time))
