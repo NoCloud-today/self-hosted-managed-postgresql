@@ -6,6 +6,7 @@ NAV_ITEMS = {
     "Restore": "/restore",
     "Cron Schedules": "/cron",
     "Query Runner": "/query",
+    "PostgreSQL Metrics": "http://localhost:3001/d/000000040/postgresql-dashboard?var-interval=$__auto&orgId=1&from=now-6h&to=now&timezone=browser&var-DS_PROMETHEUS=fennq0g25ux34c&var-namespace=&var-release=&var-instance=postgres_exporter:9187&var-datname=$__all&var-mode=$__all&refresh=10s&theme=light"
 }
 
 

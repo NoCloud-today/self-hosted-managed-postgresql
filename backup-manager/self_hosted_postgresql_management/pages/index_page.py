@@ -118,7 +118,7 @@ def users_list() -> rx.Component:
                             == 0
                     ),
                     rx.el.li(
-                        "No users found.",
+                        "No roles found.",
                         class_name="text-gray-500 p-2",
                     ),
                     rx.fragment(),
