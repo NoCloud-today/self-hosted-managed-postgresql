@@ -7,8 +7,8 @@ wait_for_health() {
     while [ $attempt -lt $max_attempts ]; do
         attempt=$((attempt + 1))
 
-        if curl -s -f http://0.0.0.0:8000/health > /dev/null; then
-            curl -s -f http://0.0.0.0:8000/health
+        if curl -s -f http://0.0.0.0:8000/ping > /dev/null; then
+            curl -s -f http://0.0.0.0:8000/ping
             echo "Health check passed"
             return 0
         fi
