@@ -4,6 +4,7 @@ wait_for_health() {
     local max_attempts=30
     local attempt=0
     echo "Waiting for health check to pass..."
+    sleep 60
     while [ $attempt -lt $max_attempts ]; do
         attempt=$((attempt + 1))
 
