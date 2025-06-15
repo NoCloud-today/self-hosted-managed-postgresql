@@ -28,7 +28,8 @@ COPY --chmod=755 --chown=${BACKREST_USER}:${BACKREST_GROUP} backup-manager .
 
 RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
 
-RUN chmod -R 755 /app && \
+RUN mkdir -p /app/data/ && \
+    chmod -R 755 /app && \
     chown -R ${BACKREST_USER}:${BACKREST_GROUP} /app/ &&  \
     chmod +x /app/scripts/*
 
@@ -37,7 +38,7 @@ USER ${BACKREST_USER}
 
 ENV REDIS_URL=redis://localhost PYTHONUNBUFFERED=1
 
-RUN reflex init && reflex export --frontend-only --no-zip
+RUN reflex init && reflex export --frontend-only --no-zip && reflex db init
 
 STOPSIGNAL SIGKILL
 

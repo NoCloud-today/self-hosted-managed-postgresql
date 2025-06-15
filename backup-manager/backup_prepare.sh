@@ -30,6 +30,8 @@ chown -R ${BACKREST_USER}:${BACKREST_GROUP} /app
 echo "Starting reflex server"
 su "${BACKREST_USER}" <<'EOF'
     redis-server --daemonize yes && \
+    reflex db makemigrations && \
+    [ -d alembic ] && reflex db migrate; \
     exec reflex run --env prod --loglevel info
 EOF
 
