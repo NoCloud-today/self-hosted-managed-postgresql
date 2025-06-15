@@ -4,6 +4,8 @@ import datetime
 import reflex as rx
 
 from self_hosted_postgresql_management.services.scheduler_service import SchedulerService, ScheduledJob
+from self_hosted_postgresql_management.db.database_models import ScheduledBackup
+from loguru import logger as log
 
 _scheduler_service = SchedulerService()
 
@@ -27,6 +29,26 @@ class CronState(rx.State):
             self.is_loading = True
             yield
         try:
+            # First load active jobs from database
+            with rx.session() as session:
+                db_jobs = session.exec(
+                    ScheduledBackup.select().where(ScheduledBackup.is_active == True)
+                ).all()
+                
+                # Add any jobs from database that aren't in scheduler
+                for db_job in db_jobs:
+                    try:
+                        hour, minute = map(int, db_job.schedule.split(":"))
+                        await asyncio.to_thread(
+                            _scheduler_service.add_backup_job,
+                            job_type=db_job.backup_type,
+                            hour=hour,
+                            minute=minute
+                        )
+                    except Exception as e:
+                        log.error(f"Failed to restore job from database: {e}")
+
+            # Now get all jobs from scheduler
             jobs = await asyncio.to_thread(
                 _scheduler_service.get_all_jobs
             )
@@ -42,67 +64,6 @@ class CronState(rx.State):
             async with self:
                 self.is_loading = False
                 yield
-
-    @rx.var
-    def cron_jobs(self) -> list[ScheduledJob]:
-        return self.cron_jobs_internal
-
-    @rx.var
-    def sorted_cron_jobs(self) -> list[ScheduledJob]:
-        return self.cron_jobs_internal
-
-    @rx.var
-    def next_scheduled_backup(self) -> ScheduledJob | None:
-        if not self.sorted_cron_jobs:
-            return None
-        return self.sorted_cron_jobs[0]
-
-    @rx.var
-    def formatted_cron_jobs(self) -> list[dict[str, str]]:
-        formatted_jobs = []
-        for job in self.cron_jobs_internal:
-            try:
-                dt_object = datetime.datetime.fromisoformat(
-                    job.next_run
-                )
-                formatted_time = dt_object.strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            except ValueError:
-                formatted_time = "Invalid date"
-            formatted_jobs.append(
-                {
-                    "id": job.id,
-                    "schedule_expression": job.schedule,
-                    "backup_type": job.type.capitalize(),
-                    "name": job.name,
-                    "next_run_time": formatted_time,
-                }
-            )
-        return formatted_jobs
-
-    @rx.var
-    def formatted_next_scheduled_backup(
-            self,
-    ) -> dict[str, str] | None:
-        next_job = self.next_scheduled_backup
-        if not next_job:
-            return None
-        try:
-            dt_object = datetime.datetime.fromisoformat(
-                next_job.next_run
-            )
-            formatted_time = dt_object.strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-        except ValueError:
-            formatted_time = "Invalid date"
-        return {
-            "schedule_expression": next_job.schedule,
-            "backup_type": next_job.type.capitalize(),
-            "description": next_job.name,
-            "next_run_time": formatted_time,
-        }
 
     @rx.event(background=True)
     async def create_backup_schedule(self):
@@ -137,12 +98,24 @@ class CronState(rx.State):
                     yield rx.toast.error("Minute must be between 0 and 59")
                 return
 
-            await asyncio.to_thread(
+            job = await asyncio.to_thread(
                 _scheduler_service.add_backup_job,
                 job_type=job_type,
                 hour=hour,
                 minute=minute
             )
+            
+            with rx.session() as session:
+                db_job = ScheduledBackup(
+                    job_id=job.id,
+                    name=job.name,
+                    backup_type=job.type,
+                    schedule=job.schedule,
+                    is_active=True
+                )
+                session.add(db_job)
+                session.commit()
+
             async with self:
                 self.selected_job_type = ""
                 self.selected_schedule_time = ""
@@ -160,6 +133,14 @@ class CronState(rx.State):
                 job_id=job_id
             )
             if success:
+                with rx.session() as session:
+                    db_job = session.exec(
+                        ScheduledBackup.select().where(ScheduledBackup.job_id == job_id)
+                    ).first()
+                    if db_job:
+                        db_job.is_active = False
+                        session.commit()
+                
                 async with self:
                     yield rx.toast.success("Successfully deleted backup schedule")
                 yield CronState.load_cron_jobs
@@ -169,3 +150,63 @@ class CronState(rx.State):
         except Exception as e:
             async with self:
                 yield rx.toast.error(f"Failed to delete backup schedule: {str(e)}")
+
+    @rx.var
+    def cron_jobs(self) -> list[ScheduledJob]:
+        return self.cron_jobs_internal
+
+    @rx.var
+    def sorted_cron_jobs(self) -> list[ScheduledJob]:
+        return self.cron_jobs_internal
+
+    @rx.var
+    def next_scheduled_backup(self) -> ScheduledJob | None:
+        if not self.sorted_cron_jobs:
+            return None
+        return self.sorted_cron_jobs[0]
+
+    @rx.var
+    def formatted_cron_jobs(self) -> list[dict[str, str]]:
+        formatted_jobs = []
+        with rx.session() as session:
+            for job in self.cron_jobs_internal:
+                db_job = session.exec(
+                    ScheduledBackup.select().where(ScheduledBackup.job_id == job.id)
+                ).first()
+                
+                next_run_time = "Invalid date"
+                if db_job and db_job.next_run:
+                    next_run_time = db_job.next_run.strftime("%Y-%m-%d %H:%M:%S")
+                
+                formatted_jobs.append(
+                    {
+                        "id": job.id,
+                        "schedule_expression": job.schedule,
+                        "backup_type": job.type.capitalize(),
+                        "name": job.name,
+                        "next_run_time": next_run_time,
+                    }
+                )
+        return formatted_jobs
+
+    @rx.var
+    def formatted_next_scheduled_backup(self) -> dict[str, str] | None:
+        next_job = self.next_scheduled_backup
+        if not next_job:
+            return None
+            
+        with rx.session() as session:
+            db_job = session.exec(
+                ScheduledBackup.select().where(ScheduledBackup.job_id == next_job.id)
+            ).first()
+            
+            next_run_time = "Invalid date"
+            if db_job and db_job.next_run:
+                next_run_time = db_job.next_run.strftime("%Y-%m-%d %H:%M:%S")
+            
+            return {
+                "schedule_expression": next_job.schedule,
+                "backup_type": next_job.type.capitalize(),
+                "description": next_job.name,
+                "next_run_time": next_run_time,
+            }

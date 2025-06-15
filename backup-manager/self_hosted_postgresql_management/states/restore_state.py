@@ -5,6 +5,7 @@ import time
 import asyncio
 from self_hosted_postgresql_management.services.backup_service import BackupService
 from self_hosted_postgresql_management.states.common_types import LaunchEntry
+from self_hosted_postgresql_management.db.database_models import RestoreHistory
 
 
 class RestoreState(rx.State):
@@ -15,6 +16,23 @@ class RestoreState(rx.State):
         "%H:%M"
     )
     _backup_service: BackupService = BackupService()
+
+    @rx.event(background=True)
+    async def load_restore_history(self):
+        with rx.session() as session:
+            history = session.exec(
+                RestoreHistory.select().order_by(RestoreHistory.timestamp_start)
+            ).all()
+            self.launch_history = [
+                cast(LaunchEntry, {
+                    "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
+                    "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
+                    "operation_type": h.operation_type,
+                    "target": h.target,
+                    "status": h.status,
+                    "message": h.message,
+                }) for h in history
+            ]
 
     def _add_launch_entry(
         self,
@@ -59,6 +77,31 @@ class RestoreState(rx.State):
             self.launch_history.insert(
                 0, cast(LaunchEntry, entry_dict)
             )
+
+        with rx.session() as session:
+            if updated_existing:
+                history_entry = session.exec(
+                    RestoreHistory.select().where(
+                        RestoreHistory.timestamp_start == start_time,
+                        RestoreHistory.operation_type == operation_type,
+                        RestoreHistory.status == "In Progress"
+                    )
+                ).first()
+                if history_entry:
+                    history_entry.status = status
+                    history_entry.message = message
+                    history_entry.timestamp_end = end_time
+            else:
+                history_entry = RestoreHistory(
+                    timestamp_start=start_time,
+                    timestamp_end=end_time,
+                    operation_type=operation_type,
+                    target=target,
+                    status=status,
+                    message=message
+                )
+                session.add(history_entry)
+            session.commit()
 
     @rx.event(background=True)
     async def restore_database_service_call(

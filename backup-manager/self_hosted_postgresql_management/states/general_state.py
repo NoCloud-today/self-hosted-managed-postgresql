@@ -5,6 +5,7 @@ from typing import Literal, cast, Any
 import reflex as rx
 from self_hosted_postgresql_management.services.backup_service import BackupService
 from self_hosted_postgresql_management.states.common_types import LaunchEntry
+from self_hosted_postgresql_management.db.database_models import QueryHistory
 from loguru import logger as log
 _backup_service: BackupService = BackupService()
 
@@ -50,6 +51,23 @@ class GeneralState(rx.State):
                     yield
             await asyncio.sleep(100)
 
+    @rx.event(background=True)
+    async def load_sql_history(self):
+        with rx.session() as session:
+            history = session.exec(
+                QueryHistory.select().order_by(QueryHistory.timestamp_start)
+            ).all()
+            self.sql_launch_history = [
+                cast(LaunchEntry, {
+                    "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
+                    "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
+                    "operation_type": h.operation_type,
+                    "target": h.target,
+                    "status": h.status,
+                    "message": h.message,
+                }) for h in history
+            ]
+
     def _add_sql_launch_entry(
             self,
             operation_type: str,
@@ -73,6 +91,58 @@ class GeneralState(rx.State):
         self.sql_launch_history.insert(
             0, cast(LaunchEntry, entry_dict)
         )
+        
+        # Save to database
+        with rx.session() as session:
+            history_entry = QueryHistory(
+                timestamp_start=start_time,
+                operation_type=operation_type,
+                target=target,
+                status=status,
+                message=message,
+                database_name=self.selected_database,
+                sql_query=self.sql_query_input
+            )
+            session.add(history_entry)
+            session.commit()
+
+    def _update_sql_launch_entry(
+            self,
+            operation_type: str,
+            target: str,
+            status: Literal["Success", "Failure"],
+            message: str,
+            start_time: datetime.datetime,
+            end_time: datetime.datetime
+    ):
+        # Update in-memory history
+        for entry in self.sql_launch_history:
+            if (
+                entry["operation_type"] == operation_type
+                and entry["target"] == target
+                and entry["timestamp_start"] == start_time.strftime("%Y-%m-%d %H:%M:%S")
+                and entry["status"] == "In Progress"
+            ):
+                entry["status"] = status
+                entry["message"] = message
+                entry["timestamp_end"] = end_time.strftime("%Y-%m-%d %H:%M:%S")
+                break
+
+        # Update database entry
+        with rx.session() as session:
+            history_entry = session.exec(
+                QueryHistory.select().where(
+                    QueryHistory.timestamp_start == start_time,
+                    QueryHistory.operation_type == operation_type,
+                    QueryHistory.target == target,
+                    QueryHistory.status == "In Progress"
+                )
+            ).first()
+            if history_entry:
+                history_entry.status = status
+                history_entry.message = message
+                history_entry.timestamp_end = end_time
+                session.commit()
 
     @rx.event
     def set_sql_query_input(self, value: str):
@@ -117,34 +187,18 @@ class GeneralState(rx.State):
             )
         except Exception as e:
             current_status = "Failure"
+            response = str(e)
         end_time = datetime.datetime.now()
         async with self:
             self.sql_query_result = [(response,)] if isinstance(response,str) else response
-            for entry in self.sql_launch_history:
-                if (
-                        entry["operation_type"]
-                        == "SQL Query Execution"
-                        and entry["target"] == target_info
-                        and (
-                        entry["timestamp_start"]
-                        == start_time.strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-                )
-                        and (
-                        entry["status"] == "In Progress"
-                )
-                ):
-                    entry["status"] = current_status
-                    entry["message"] = (
-                        f"SQL Query ({target_info}) {current_status}: {response}"
-                    )
-                    entry["timestamp_end"] = (
-                        end_time.strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    )
-                    break
+            self._update_sql_launch_entry(
+                "SQL Query Execution",
+                target_info,
+                current_status,
+                f"SQL Query ({target_info}) {current_status}: {response}",
+                start_time,
+                end_time
+            )
             if current_status == "Success":
                 yield rx.toast.success(
                     f"SQL query on '{self.selected_database}' successful: {response}"
