@@ -103,21 +103,21 @@ class BackupService(metaclass=Singleton):
             raise e
 
     def get_databases(self) -> List[str]:
-        log.info("Getting all databases")
+        log.debug("Getting all databases")
         con = self._get_db_connection()
         with con.cursor() as cur:
             cur.execute(sql.SQL('SELECT datname FROM pg_database WHERE datistemplate = false;'))
             databases = [value[0] for value in cur.fetchall()]
-            log.info(f"Got all databases: {databases}")
+            log.debug(f"Got all databases: {databases}")
             return databases
 
     def get_roles(self) -> List[str]:
-        log.info("Getting roles")
+        log.debug("Getting roles")
         con = self._get_db_connection()
         with con.cursor() as cur:
             cur.execute(sql.SQL('SELECT rolname FROM pg_roles;'))
             roles = [value[0] for value in cur.fetchall()]
-            log.info(f"Got all roles: {roles}")
+            log.debug(f"Got all roles: {roles}")
             return roles
 
     def restore_database_from_existing_stanza(self) -> str:
