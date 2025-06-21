@@ -23,16 +23,17 @@ class RestoreState(rx.State):
             history = session.exec(
                 RestoreHistory.select().order_by(RestoreHistory.timestamp_start)
             ).all()
-            self.launch_history = [
-                cast(LaunchEntry, {
-                    "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
-                    "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
-                    "operation_type": h.operation_type,
-                    "target": h.target,
-                    "status": h.status,
-                    "message": h.message,
-                }) for h in history
-            ]
+            async with self:
+                self.launch_history = [
+                    cast(LaunchEntry, {
+                        "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
+                        "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
+                        "operation_type": h.operation_type,
+                        "target": h.target,
+                        "status": h.status,
+                        "message": h.message,
+                    }) for h in history
+                ]
 
     def _add_launch_entry(
         self,

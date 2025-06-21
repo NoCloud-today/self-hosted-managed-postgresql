@@ -1,13 +1,20 @@
+import asyncio
+import sys
+
 import reflex as rx
 
 from self_hosted_postgresql_management.api.routes import fastapi_app
 from self_hosted_postgresql_management.components.navbar import navbar
+from self_hosted_postgresql_management.db.database_models import ScheduledBackup
 from self_hosted_postgresql_management.pages.backups_page import backups_page
 from self_hosted_postgresql_management.pages.cron_page import cron_page
 from self_hosted_postgresql_management.pages.index_page import index_page
 from self_hosted_postgresql_management.pages.query_page import query_page
 from self_hosted_postgresql_management.pages.restore_page import restore_page
 from loguru import logger as log
+
+from self_hosted_postgresql_management.services.scheduler_service import load_cron_jobs
+
 
 def main_layout(page_content: rx.Component) -> rx.Component:
     return rx.el.div(
@@ -59,5 +66,13 @@ app = rx.App(
     ],
 
 )
+
+app.register_lifespan_task(load_cron_jobs)
+
+log.remove()
+log.add(sys.stdout, level="INFO")
+log.add(sys.stdout, level="WARNING")
+log.add(sys.stdout, level="ERROR")
+
 log.info("Enabling state")
 app._enable_state()

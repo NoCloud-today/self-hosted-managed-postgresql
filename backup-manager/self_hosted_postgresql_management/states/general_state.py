@@ -24,6 +24,7 @@ class GeneralState(rx.State):
 
     @rx.event(background=True)
     async def load_initial_data(self):
+        yield GeneralState.load_sql_history
         async with self:
             self.is_loading_general = True
             yield
@@ -57,16 +58,17 @@ class GeneralState(rx.State):
             history = session.exec(
                 QueryHistory.select().order_by(QueryHistory.timestamp_start)
             ).all()
-            self.sql_launch_history = [
-                cast(LaunchEntry, {
-                    "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
-                    "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
-                    "operation_type": h.operation_type,
-                    "target": h.target,
-                    "status": h.status,
-                    "message": h.message,
-                }) for h in history
-            ]
+            async with self:
+                self.sql_launch_history = [
+                    cast(LaunchEntry, {
+                        "timestamp_start": h.timestamp_start.strftime("%Y-%m-%d %H:%M:%S"),
+                        "timestamp_end": h.timestamp_end.strftime("%Y-%m-%d %H:%M:%S") if h.timestamp_end else "",
+                        "operation_type": h.operation_type,
+                        "target": h.target,
+                        "status": h.status,
+                        "message": h.message,
+                    }) for h in history
+                ]
 
     def _add_sql_launch_entry(
             self,
