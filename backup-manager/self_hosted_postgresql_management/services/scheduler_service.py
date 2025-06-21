@@ -1,11 +1,36 @@
+import asyncio
 from typing import List
-
+import reflex as rx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from self_hosted_postgresql_management.api.models import ScheduledJob
+from self_hosted_postgresql_management.db.database_models import ScheduledBackup
 from self_hosted_postgresql_management.services.backup_service import BackupService
 from self_hosted_postgresql_management.services.singleton import Singleton
+from loguru import logger as log
+
+async def load_cron_jobs():
+    log.info("Loading cron jobs")
+    with rx.session() as session:
+        db_jobs = session.exec(
+            ScheduledBackup.select().where(ScheduledBackup.is_active == True)
+        ).all()
+    scheduler_service = SchedulerService()
+    for db_job in db_jobs:
+        try:
+            hour, minute = map(int, db_job.schedule.split(":"))
+            await asyncio.to_thread(
+                scheduler_service.add_backup_job,
+                job_type=db_job.backup_type,
+                hour=hour,
+                minute=minute
+            )
+        except Exception as e:
+            log.error(f"Failed to restore job from database: {e}")
+
+
+
 
 
 class SchedulerService(metaclass=Singleton):

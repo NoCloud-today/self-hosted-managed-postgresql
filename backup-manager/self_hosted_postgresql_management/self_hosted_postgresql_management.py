@@ -67,6 +67,7 @@ app = rx.App(
 
 )
 
+app.register_lifespan_task(load_cron_jobs)
 
 log.remove()
 log.add(sys.stdout, level="INFO")
