@@ -69,6 +69,8 @@ For accessing management service via UI interface you should go to `http://0.0.0
 
 <img src="screenshots/restore.png" alt="restore" width="800"/>
 
+<img src="screenshots/scheduled_backups.png" alt="scheduled_backups" width="800"/>
+
 <img src="screenshots/query_runner.png" alt="query_runner" width="800"/>
 
 <img src="screenshots/dashboard.png" alt="dashboard" width="800"/>
