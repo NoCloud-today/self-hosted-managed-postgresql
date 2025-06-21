@@ -99,4 +99,5 @@ def restore_page() -> rx.Component:
             class_name="mt-8",
         ),
         class_name="p-4 md:p-8",
+        on_mount=RestoreState.load_restore_history
     )
