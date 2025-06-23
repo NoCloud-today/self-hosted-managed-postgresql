@@ -9,7 +9,7 @@ fi
 
 docker network ls
 docker run --rm \
-  --network=self-hosted-postgresql-management_backup-network \
+  --network=self-hosted-managed-postgresql_backup-network \
   --user root \
   --entrypoint bash \
   -e PG_VERSION="$PG_VERSION" \
@@ -18,7 +18,7 @@ docker run --rm \
   -e BACKREST_UID="$BACKREST_UID" \
   -e BACKREST_GID="$BACKREST_GID" \
   -e CONTAINER_COMMAND="$CONTAINER_COMMAND" \
-  -v "self-hosted-postgresql-management_postgres_data:/var/lib/postgresql/${PG_VERSION}/main" \
+  -v "self-hosted-managed-postgresql_postgres_data:/var/lib/postgresql/${PG_VERSION}/main" \
   "andrewbolotsky/pg-pgbackrest:$BACKREST_VERSION" \
   -c "
     echo \"CONTAINER_COMMAND: \$CONTAINER_COMMAND\" && \

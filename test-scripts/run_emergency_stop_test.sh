@@ -86,7 +86,7 @@ delete_postgres_container(){
   echo "Killing postgres container"
   docker kill pg
 
-  docker run --rm -v self-hosted-postgresql-management_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
+  docker run --rm -v self-hosted-managed-postgresql_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
 
   docker start pg
 
