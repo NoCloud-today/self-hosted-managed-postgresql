@@ -2,6 +2,8 @@ ARG BACKREST_VERSION="2.54.2"
 FROM woblerr/pgbackrest:${BACKREST_VERSION}
 
 WORKDIR /app
+ARG GRAFANA_ADDRESS
+ENV GRAFANA_ADDRESS=${GRAFANA_ADDRESS}
 
 RUN apt-get update -y \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \

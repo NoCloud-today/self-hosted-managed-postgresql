@@ -21,14 +21,24 @@ This project provides a self-hosted solution for managing PostgreSQL databases, 
 2. Prepare environment variables (which are mandatory in compose.yml)
 3. If you want to run s3 locally - run
     ```bash 
-    docker compose  -f compose.s3.yml up --wait --build
+    docker compose  -f compose.s3.yml up --wait
     ```
     Otherwise, set proper address for your s3 storage in ``backup-manager/config/pgbackrest.conf``,  ``postgres/config/postgresql.conf``, then
-    
+    For running prometheus and grafana - you should run
+
+   ```bash
+    docker compose -f compose.monitoring.yml up
+    ```
+    You may run it on another host, if you do in such case, set proper address for grafana in .env.
+4. 
     Run docker-compose
     ```bash
     docker compose -f compose.yml up
     ```
+  
+      
+
+
 ## Environment Variables
 
 The following environment variables are required:
@@ -45,6 +55,9 @@ BACKREST_GID={your_gid}      # Group ID for pgBackRest (use $(id -g))
 
 # Volume Configuration
 DOCKER_VOLUME_DIRECTORY=./volume  # Directory for storing backup data
+
+GRAFANA_ADDRESS=http://localhost:3001 # address for grafana 
+
 ```
 
 ## PostgreSQL Configuration
