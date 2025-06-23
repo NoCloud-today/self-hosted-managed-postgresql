@@ -1,4 +1,4 @@
-# Self-hosted PostgreSQL management
+# Self-hosted managed PostgreSQL 
 
 This project provides a self-hosted solution for managing PostgreSQL databases, including backup management, database operations, monitoring, and scheduled backups.
 
