@@ -65,6 +65,7 @@ services:
       - "POSTGRES_CONFIG=$PWD/postgres/config"
       - "CERTS_DIRECTORY_FOR_INTERNAL_CONTAINER=$PWD/certs/pgbackrest"
       - "POSTGRES_PASSWORD=postgres"
+      - "GRAFANA_ADDRESS=http://localhost:3001"
     ports:
       - "8000:8000"
       - "3000:3000"
@@ -105,46 +106,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      - prometheus_data:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-    ports:
-      - "9090:9090"
-    networks:
-      - backup-network
-    depends_on:
-      - postgres_exporter
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_HTTP_PORT: 3001
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/dashboard.yml:/etc/grafana/provisioning/dashboards/main.yml
-      - ./grafana/dashboards:/etc/grafana/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
-    ports:
-      - "3001:3001"
-    networks:
-      - backup-network
-    depends_on:
-      - prometheus
 networks:
   backup-network:
     driver: bridge
 volumes:
   postgres_data:
-  grafana_data:
-  prometheus_data:
   app_state_data:

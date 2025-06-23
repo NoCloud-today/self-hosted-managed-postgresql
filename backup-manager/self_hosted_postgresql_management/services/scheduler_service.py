@@ -19,13 +19,18 @@ async def load_cron_jobs():
     scheduler_service = SchedulerService()
     for db_job in db_jobs:
         try:
-            hour, minute = map(int, db_job.schedule.split(":"))
-            await asyncio.to_thread(
-                scheduler_service.add_backup_job,
-                job_type=db_job.backup_type,
-                hour=hour,
-                minute=minute
-            )
+            if len(db_job.schedule.split(":")) != 2:
+                await asyncio.to_thread(scheduler_service.add_backup_job_by_cron,
+                                        job_type=db_job.backup_type,
+                                        cron=db_job.schedule)
+            else:
+                hour, minute = map(int, db_job.schedule.split(":"))
+                await asyncio.to_thread(
+                    scheduler_service.add_backup_job,
+                    job_type=db_job.backup_type,
+                    hour=hour,
+                    minute=minute
+                )
         except Exception as e:
             log.error(f"Failed to restore job from database: {e}")
 
@@ -42,14 +47,7 @@ class SchedulerService(metaclass=Singleton):
     def add_backup_job(self, job_type: str, hour: int, minute: int) -> ScheduledJob:
         job_id = f"{job_type}_backup_{hour}_{minute}"
 
-        if job_type == "incr":
-            job_func = self.backup_service.create_incremental_backup
-        elif job_type == "diff":
-            job_func = self.backup_service.create_diff_backup
-        elif job_type == "full":
-            job_func = self.backup_service.create_full_backup
-        else:
-            raise ValueError(f"Invalid backup type: {job_type}")
+        job_func = self.get_job_type_by_name(job_type)
 
         job = self.scheduler.add_job(
             job_func,
@@ -63,6 +61,35 @@ class SchedulerService(metaclass=Singleton):
                             type=job_type,
                             schedule=f"{hour:02d}:{minute:02d}",
                             next_run=job.next_run_time.isoformat() if job.next_run_time else None)
+
+    def add_backup_job_by_cron(self, job_type: str, cron: str) -> ScheduledJob:
+        job_id = f"{job_type}_backup_{cron}"
+        log.info(f"Creating backup job by cron expression: {cron}")
+        job_func = self.get_job_type_by_name(job_type)
+
+        job = self.scheduler.add_job(
+            job_func,
+            trigger=CronTrigger.from_crontab(cron),
+            id=job_id,
+            name=f"Cron backup with expression: {cron}",
+            replace_existing=True
+        )
+        return ScheduledJob(id=job.id,
+                            name=job.name,
+                            type=job_type,
+                            schedule=f"{cron}",
+                            next_run=job.next_run_time.isoformat() if job.next_run_time else None)
+
+    def get_job_type_by_name(self, job_type):
+        if job_type == "incr":
+            job_func = self.backup_service.create_incremental_backup
+        elif job_type == "diff":
+            job_func = self.backup_service.create_diff_backup
+        elif job_type == "full":
+            job_func = self.backup_service.create_full_backup
+        else:
+            raise ValueError(f"Invalid backup type: {job_type}")
+        return job_func
 
     def get_all_jobs(self) -> List[ScheduledJob]:
         jobs = []

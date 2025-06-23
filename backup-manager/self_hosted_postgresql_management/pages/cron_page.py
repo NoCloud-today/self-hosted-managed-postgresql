@@ -187,21 +187,57 @@ def create_backup_form() -> rx.Component:
                 class_name="mb-4",
             ),
             rx.el.div(
-                rx.el.label(
-                    "Schedule Time",
-                    class_name="block text-sm font-medium text-gray-700 mb-1",
-                ),
                 rx.el.div(
-                    rx.input(
-                        type="time",
-                        id="schedule_time",
-                        on_change=CronState.set_schedule_time,
-                        value=CronState.selected_schedule_time,
-                        class_name="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm",
+                    rx.text(
+                        "Choose between simple daily scheduling (HH:MM) or  cron expression for more complex schedules.",
+                        class_name="text-sm text-gray-600 mb-3",
                     ),
-                    class_name="relative",
+                    rx.switch(
+                        "Use Cron Expression",
+                        on_change=CronState.toggle_schedule_type,
+                        is_checked=CronState.use_cron_expression,
+                        class_name="mb-2",
+                    ),
+                    class_name="mb-4",
                 ),
-                class_name="mb-4",
+                rx.cond(
+                    CronState.use_cron_expression,
+                    rx.el.div(
+                        rx.el.label(
+                            "Cron Expression",
+                            class_name="block text-sm font-medium text-gray-700 mb-1",
+                        ),
+                        rx.input(
+                            placeholder="Enter cron expression (e.g. 0 2 * * *)",
+                            id="cron_expression",
+                            on_change=CronState.set_cron_expression,
+                            value=CronState.cron_expression,
+                            class_name="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm",
+                        ),
+                        rx.text(
+                            "Format: minute hour day month weekday (e.g. 0 2 * * * for daily at 2 AM)",
+                            class_name="mt-1 text-sm text-gray-500",
+                        ),
+                        class_name="mb-4",
+                    ),
+                    rx.el.div(
+                        rx.el.label(
+                            "Schedule Time",
+                            class_name="block text-sm font-medium text-gray-700 mb-1",
+                        ),
+                        rx.el.div(
+                            rx.input(
+                                type="time",
+                                id="schedule_time",
+                                on_change=CronState.set_schedule_time,
+                                value=CronState.selected_schedule_time,
+                                class_name="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm",
+                            ),
+                            class_name="relative",
+                        ),
+                        class_name="mb-4",
+                    ),
+                ),
             ),
             rx.button(
                 "Create Schedule",
@@ -217,7 +253,7 @@ def create_backup_form() -> rx.Component:
 def cron_page() -> rx.Component:
     return rx.el.div(
         rx.el.h2(
-            "Cron Backup Schedules",
+            "Backup Schedules",
             class_name="text-2xl font-bold text-gray-800 mb-6",
         ),
         create_backup_form(),

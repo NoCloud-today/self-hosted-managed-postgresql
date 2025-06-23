@@ -3,10 +3,10 @@ TEST_DIRECTORY="./test-volume"
 BEFORE=$DOCKER_VOLUME_DIRECTORY
 export DOCKER_VOLUME_DIRECTORY=$TEST_DIRECTORY
 
-docker compose  -f compose.s3.yml up --wait --build
-docker compose  -f compose.yml up --wait --build
+docker compose  -f compose.s3.yml up --wait --build  --force-recreate
+docker compose  -f compose.yml up --wait --build  --force-recreate
 
-timeout 120s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} backup-manager`" != "healthy" ]; do     sleep 2; done'
+timeout 300s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} backup-manager`" != "healthy" ]; do     sleep 2; done'
 docker compose  -f compose.test.yml up --abort-on-container-exit --force-recreate --build
 TEST_EXIT_CODE=$?
 DOCKER_VOLUME_DIRECTORY=$BEFORE

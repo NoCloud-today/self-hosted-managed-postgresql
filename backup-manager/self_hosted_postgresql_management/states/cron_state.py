@@ -14,6 +14,8 @@ class CronState(rx.State):
     is_loading: bool = False
     selected_job_type: str = ""
     selected_schedule_time: str = ""
+    use_cron_expression: bool = False
+    cron_expression: str = ""
 
     @rx.event
     def set_job_type(self, value: str):
@@ -23,32 +25,44 @@ class CronState(rx.State):
     def set_schedule_time(self, value: str):
         self.selected_schedule_time = value
 
+    @rx.event
+    def toggle_schedule_type(self):
+        self.use_cron_expression = not self.use_cron_expression
+        self.selected_schedule_time = ""
+        self.cron_expression = ""
+
+    @rx.event
+    def set_cron_expression(self, value: str):
+        self.cron_expression = value
+
     @rx.event(background=True)
     async def load_cron_jobs(self):
         async with self:
             self.is_loading = True
             yield
         try:
-            # First load active jobs from database
             with rx.session() as session:
                 db_jobs = session.exec(
                     ScheduledBackup.select().where(ScheduledBackup.is_active == True)
                 ).all()
                 
-                # Add any jobs from database that aren't in scheduler
                 for db_job in db_jobs:
                     try:
-                        hour, minute = map(int, db_job.schedule.split(":"))
-                        await asyncio.to_thread(
-                            _scheduler_service.add_backup_job,
-                            job_type=db_job.backup_type,
-                            hour=hour,
-                            minute=minute
-                        )
+                        if len(db_job.schedule.split(":")) != 2:
+                            await asyncio.to_thread(_scheduler_service.add_backup_job_by_cron,
+                                                    job_type=db_job.backup_type,
+                                                    cron=db_job.schedule)
+                        else:
+                            hour, minute = map(int, db_job.schedule.split(":"))
+                            await asyncio.to_thread(
+                                _scheduler_service.add_backup_job,
+                                job_type=db_job.backup_type,
+                                hour=hour,
+                                minute=minute
+                            )
                     except Exception as e:
                         log.error(f"Failed to restore job from database: {e}")
 
-            # Now get all jobs from scheduler
             jobs = await asyncio.to_thread(
                 _scheduler_service.get_all_jobs
             )
@@ -70,40 +84,58 @@ class CronState(rx.State):
         try:
             job_type = self.selected_job_type
             schedule_time = self.selected_schedule_time
+            cron_expr = self.cron_expression
 
             if not job_type or job_type not in ["full", "incr", "diff"]:
                 async with self:
                     yield rx.toast.error(f"Invalid backup type selected: {job_type}")
                 return
 
-            if not schedule_time:
-                async with self:
-                    yield rx.toast.error("Please select a schedule time")
-                return
+            if self.use_cron_expression:
+                if not cron_expr:
+                    async with self:
+                        yield rx.toast.error("Please enter a cron expression")
+                    return
+                
+                try:
+                    job = await asyncio.to_thread(
+                        _scheduler_service.add_backup_job_by_cron,
+                        job_type=job_type,
+                        cron=cron_expr
+                    )
+                except ValueError as e:
+                    async with self:
+                        yield rx.toast.error(f"Invalid cron expression: {str(e)}")
+                    return
+            else:
+                if not schedule_time:
+                    async with self:
+                        yield rx.toast.error("Please select a schedule time")
+                    return
 
-            try:
-                hour, minute = map(int, schedule_time.split(":"))
-            except ValueError:
-                async with self:
-                    yield rx.toast.error("Invalid time format")
-                return
+                try:
+                    hour, minute = map(int, schedule_time.split(":"))
+                except ValueError:
+                    async with self:
+                        yield rx.toast.error("Invalid time format")
+                    return
 
-            if not (0 <= hour <= 23):
-                async with self:
-                    yield rx.toast.error("Hour must be between 0 and 23")
-                return
+                if not (0 <= hour <= 23):
+                    async with self:
+                        yield rx.toast.error("Hour must be between 0 and 23")
+                    return
 
-            if not (0 <= minute <= 59):
-                async with self:
-                    yield rx.toast.error("Minute must be between 0 and 59")
-                return
+                if not (0 <= minute <= 59):
+                    async with self:
+                        yield rx.toast.error("Minute must be between 0 and 59")
+                    return
 
-            job = await asyncio.to_thread(
-                _scheduler_service.add_backup_job,
-                job_type=job_type,
-                hour=hour,
-                minute=minute
-            )
+                job = await asyncio.to_thread(
+                    _scheduler_service.add_backup_job,
+                    job_type=job_type,
+                    hour=hour,
+                    minute=minute
+                )
             
             with rx.session() as session:
                 db_job = ScheduledBackup(
@@ -119,6 +151,7 @@ class CronState(rx.State):
             async with self:
                 self.selected_job_type = ""
                 self.selected_schedule_time = ""
+                self.cron_expression = ""
                 yield rx.toast.success(f"Successfully created {job_type} backup schedule")
             yield CronState.load_cron_jobs
         except Exception as e:

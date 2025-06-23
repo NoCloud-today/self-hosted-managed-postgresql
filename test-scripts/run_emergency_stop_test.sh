@@ -9,8 +9,8 @@ wait_for_health() {
 
 start_containers(){
   echo "Starting containers..."
-  docker compose -f compose.s3.yml up  -d --wait
-  docker compose -f compose.yml up -d --build
+  docker compose -f compose.s3.yml up  -d --wait --force-recreate
+  docker compose -f compose.yml up -d --build --force-recreate
 
   echo "Waiting for containers to be healthy..."
   wait_for_health
@@ -74,22 +74,24 @@ verify_restore(){
 }
 create_immediate_restore(){
   echo "Performing immediate restore..."
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/immediate
 }
 create_pitr_restore(){
   echo "Performing pitr restore..."
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/time?timestamp="$1"
 }
 delete_postgres_container(){
   echo "Killing postgres container"
   docker kill pg
 
-  docker run --rm -v self-hosted-postgresql-management_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
+  docker run --rm -v self-hosted-managed-postgresql_postgres_data:/volume busybox sh -c "rm -rf /volume/*"
 
   docker start pg
 
-  timeout 30s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
-
+  timeout 40s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/existing
 
 }
