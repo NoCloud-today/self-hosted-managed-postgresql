@@ -7,6 +7,7 @@ if [ -z "$CONTAINER_COMMAND" ]; then
     exit 1
 fi
 
+docker network ls
 docker run --rm \
   --network=self-hosted-postgresql-management_backup-network \
   --user root \
