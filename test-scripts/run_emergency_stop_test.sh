@@ -74,10 +74,12 @@ verify_restore(){
 }
 create_immediate_restore(){
   echo "Performing immediate restore..."
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/immediate
 }
 create_pitr_restore(){
   echo "Performing pitr restore..."
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/time?timestamp="$1"
 }
 delete_postgres_container(){
@@ -88,8 +90,8 @@ delete_postgres_container(){
 
   docker start pg
 
-  timeout 30s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
-
+  timeout 40s sh -c 'while [ "`docker inspect -f {{.State.Health.Status}} pg`" != "healthy" ]; do     sleep 2; done'
+  docker network ls
   curl -X POST http://0.0.0.0:8000/restore/existing
 
 }
